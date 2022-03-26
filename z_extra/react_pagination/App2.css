@@ -1,0 +1,9 @@
+ul li {
+    display: inline-block;
+    color: white;
+    background-color: rgb(88, 158, 204);
+    padding: 5px;
+    margin-right: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+}

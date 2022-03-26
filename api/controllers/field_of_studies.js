@@ -1,7 +1,6 @@
 const mysql = require("mysql2/promise");
 const dbConfig = require("../config/dbConfig");
 
-
 const get_all = async (req, res) => {
   //connect to db
   let connection;
@@ -19,18 +18,14 @@ const get_all = async (req, res) => {
     return res.status(400).json({ message: "specify page and limit" });
 
   const startIndex = (page - 1) * limit;
-  const endIndex = page * limit;
 
   const results = {};
-  results.currentPage = page;
-  let count;
 
   try {
     const [result1, fields1] = await connection.execute(
       "select count(*) as count from field_of_studies"
     );
-    count = result1[0].count;
-    results.totallPage = Math.ceil(result1[0].count / limit);
+    results.totallItems = result1[0].count;
   } catch (error) {
     return res
       .status(500)
@@ -49,20 +44,6 @@ const get_all = async (req, res) => {
   }
 
   connection.end();
-
-  if (endIndex < count) {
-    results.next = {
-      page: page + 1,
-      limit: limit,
-    };
-  }
-
-  if (startIndex > 0) {
-    results.previous = {
-      page: page - 1,
-      limit: limit,
-    };
-  }
 
   res.status(200).json(results);
 };
