@@ -1,0 +1,66 @@
+
+http://localhost:3500/field_of_studies/?page=1&limit=10
+###################
+
+POST http://localhost:3500/field_of_studies
+content-type: application/json
+
+{
+    "name":"60مهندسی کامپیوتر"
+}
+###################
+
+PUT http://localhost:3500/field_of_studies
+content-type: application/json
+
+{
+    "id": "6",
+    "name":"مهندسی کامپیوتر شش"
+}
+###################
+
+DELETE http://localhost:3500/field_of_studies
+content-type: application/json
+
+{
+    "id":"8"
+}
+############################################################################
+http://localhost:3500/users/?page=1&limit=10
+###################
+
+POST http://localhost:3500/users
+content-type: application/json
+
+{ 
+    "email":"ali@yahoo.com60",
+    "password":"1234",
+    "firstName":"a",
+    "lastName":"b",
+    "role":"2",
+    "field_of_study_id":"1"
+}
+###################
+
+PUT http://localhost:3500/users
+content-type: application/json
+
+{ 
+    "id":"58",
+    "email":"ali@yahoo.com60",
+    "password":"1234",
+    "firstName":"a",
+    "lastName":"b",
+    "role":"2",
+    "field_of_study_id":"6"
+}
+###################
+
+DELETE http://localhost:3500/users
+content-type: application/json
+
+{
+    "id":"55"
+}
+############################################################################
+

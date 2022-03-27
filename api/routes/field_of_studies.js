@@ -10,10 +10,13 @@ const {
 
 router.get("/", get_all);
 router.post("/", create_fos);
-router.put("/:fos_id", update_fos);
-router.delete("/:fos_id", delete_fos);
+router.put("/", update_fos);
+router.delete("/", delete_fos);
 
 module.exports = router;
+
+
+//router.get("/:fos_id", update_fos);  req.params.fos_id
 
 //const checkAuth = require('../middleware/check-auth');
 //router.get("/", checkAuth, OrdersController.orders_get_all);

@@ -10,8 +10,8 @@ const {
 
 router.get('/', get_all);
 router.post('/', create_user);
-router.put('/:user_id', update_user);
-router.delete('/:user_id', delete_user);
+router.put('/', update_user);
+router.delete('/', delete_user);
 
 module.exports = router;
 

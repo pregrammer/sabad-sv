@@ -1,5 +1,8 @@
 ul li {
     display: inline-block;
+}
+
+ul li a{
     color: white;
     background-color: rgb(88, 158, 204);
     padding: 5px;
