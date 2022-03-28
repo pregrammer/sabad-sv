@@ -6,7 +6,7 @@ POST http://localhost:3500/field_of_studies
 content-type: application/json
 
 {
-    "name":"60مهندسی کامپیوتر"
+    "name":"58مهندسی کامپیوتر"
 }
 ###################
 
@@ -62,5 +62,19 @@ content-type: application/json
 {
     "id":"55"
 }
+############################################################################
+
+POST http://localhost:3500/auth/login
+content-type: application/json
+
+{ 
+    "email":"ali@yahoo.com60",
+    "password":"1234",
+    "rememberme":true
+}
+###################
+
+http://localhost:3500/auth/logout
+
 ############################################################################
 

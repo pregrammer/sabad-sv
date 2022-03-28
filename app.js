@@ -2,7 +2,9 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const morgan = require("morgan");
-//const cookieParser = require('cookie-parser');
+const cookieParser = require("cookie-parser");
+require("dotenv").config();
+const { requireAuth } = require("./api/middlewares/authMiddlewares");
 
 const corsOptions = require("./api/config/corsOptions");
 const PORT = process.env.PORT || 3500;
@@ -16,11 +18,13 @@ app.use(express.urlencoded({ extended: false }));
 // built-in middleware for json
 app.use(express.json());
 //middleware for cookies
-//app.use(cookieParser());
+app.use(cookieParser());
 
 // Routes which should handle requests
-app.use("/field_of_studies", require("./api/routes/field_of_studies"));
-app.use("/users", require("./api/routes/users"));
+app.use("/auth", require("./api/routes/authRoutes"));
+app.use("*", requireAuth);
+app.use("/field_of_studies", require("./api/routes/field_of_studiesRoutes"));
+app.use("/users", require("./api/routes/usersRoutes"));
 
 // route not found
 app.all("*", (req, res) => {
