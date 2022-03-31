@@ -1,5 +1,5 @@
 
-http://localhost:3500/field_of_studies/?page=1&limit=10
+http://localhost:3500/field_of_studies?page=1&limit=10
 ###################
 
 POST http://localhost:3500/field_of_studies
@@ -14,7 +14,7 @@ PUT http://localhost:3500/field_of_studies
 content-type: application/json
 
 {
-    "id": "6",
+    "id":6,
     "name":"مهندسی کامپیوتر شش"
 }
 ###################
@@ -23,22 +23,22 @@ DELETE http://localhost:3500/field_of_studies
 content-type: application/json
 
 {
-    "id":"8"
+    "id":8
 }
 ############################################################################
-http://localhost:3500/users/?page=1&limit=10
+http://localhost:3500/users?page=1&limit=10
 ###################
 
 POST http://localhost:3500/users
 content-type: application/json
 
 { 
-    "email":"ali@yahoo.com60",
+    "email":"ali@yahoo.com59",
     "password":"1234",
     "firstName":"a",
     "lastName":"b",
-    "role":"2",
-    "field_of_study_id":"1"
+    "role":2,
+    "field_of_study_id":1
 }
 ###################
 
@@ -46,13 +46,13 @@ PUT http://localhost:3500/users
 content-type: application/json
 
 { 
-    "id":"1",
+    "id":1,
     "email":"ali@yahoo.com1",
     "password":"aa111",
     "firstName":"a",
     "lastName":"b",
-    "role":"1",
-    "field_of_study_id":"1"
+    "role":1,
+    "field_of_study_id":1
 }
 ###################
 
@@ -60,7 +60,7 @@ DELETE http://localhost:3500/users
 content-type: application/json
 
 {
-    "id":"55"
+    "id":55
 }
 ############################################################################
 
@@ -95,7 +95,7 @@ content-type: application/json
 {
     "title":"با سلام",
     "body":"کار را انجان دهید",
-    "to_user_id":"5"
+    "to_user_id":5
 }
 ###################
 
@@ -103,7 +103,7 @@ PUT http://localhost:3500/messages
 content-type: application/json
 
 {
-    "id":"59",
+    "id":59,
     "title":"4با سلام",
     "body":"4کار را انجان دهید",
     "to_user_id":"10"
@@ -114,9 +114,114 @@ DELETE http://localhost:3500/messages
 content-type: application/json
 
 {
-    "id":"8",
+    "id":8,
     "forBoth":true
 }
 
 ############################################################################
 
+http://localhost:3500/colleges?page=1&limit=10
+###################
+
+POST http://localhost:3500/colleges
+content-type: application/json
+
+{
+    "name":"کامپیوتر59"
+}
+###################
+
+PUT http://localhost:3500/colleges
+content-type: application/json
+
+{
+    "id":6,
+    "name":"کامپیوتر شش"
+}
+###################
+
+DELETE http://localhost:3500/colleges
+content-type: application/json
+
+{
+    "id":8
+}
+############################################################################
+
+http://localhost:3500/times?page=1&limit=10
+###################
+
+POST http://localhost:3500/times
+content-type: application/json
+
+{
+    "start":8,
+    "end":11
+}
+###################
+
+PUT http://localhost:3500/times
+content-type: application/json
+
+{
+    "id":58,
+    "start":"13",
+    "end":"15"
+}
+###################
+
+DELETE http://localhost:3500/times
+content-type: application/json
+
+{
+    "id":56
+}
+############################################################################
+http://localhost:3500/professors?page=1&limit=10
+###################
+http://localhost:3500/professors/filter/?page=1&limit=10
+content-type: application/json
+
+{ 
+    "field_of_study_id":"all",
+    "isInvited":"all",
+    "lastGrade":"all"
+}
+###################
+
+POST http://localhost:3500/professors
+content-type: application/json
+
+{ 
+    "firstName":"a",
+    "lastName":"b",
+    "lastGrade":1,
+    "isInvited":true,
+    "email":"ali@yahoo.com60",
+    "phoneNumber":"09125648796",
+    "field_of_study_id":"1"
+}
+###################
+
+PUT http://localhost:3500/professors
+content-type: application/json
+
+{ 
+    "id":60,
+    "firstName":"c",
+    "lastName":"d",
+    "lastGrade":2,
+    "isInvited":false,
+    "email":"ali@yahoo.com6000",
+    "phoneNumber":"09125648733",
+    "field_of_study_id":"3"
+}
+###################
+
+DELETE http://localhost:3500/professors
+content-type: application/json
+
+{
+    "id":59
+}
+############################################################################

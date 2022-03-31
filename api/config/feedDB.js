@@ -157,7 +157,37 @@ app.get("/", async (req, res) => {
 });
 
 /////////////////////////////////////////////// professors
+const mysql = require("mysql2/promise");
+const dbConfig = require("./api/config/dbConfig");
+app.get("/", async (req, res) => {
 
+  let connection;
+  try {
+    connection = await mysql.createConnection(dbConfig);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "خطا در برقراری ارتباط با پایگاه داده" });
+  }
+
+  for (let i = 1; i < 59; i++) {
+    const isInvited = Math.floor(Math.random() * 2);
+    const lastGrade = Math.floor(Math.random() * 3) + 1;
+    const last_two_phoneNumber = Math.floor(Math.random() * (100 - 10)) + 10;
+    const query = `insert into professors (firstName, lastName, lastGrade, isInvited, email, phoneNumber, field_of_study_id) values ('saeed${i}', 'naseri${i}', ${lastGrade}, ${isInvited === 0 ? false:true}, 'saeed@yahoo.com${i}', '091245879${last_two_phoneNumber}', ${i})`;
+
+    try {
+      const [result2, fields2] = await connection.execute(query);      
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+    }
+  }
+
+  connection.end();
+  res.status(201).send({ message: `استاد ها با موفقیت ثبت شدند` });
+});
 
 /////////////////////////////////////////////// classes
 

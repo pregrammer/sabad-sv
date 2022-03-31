@@ -35,9 +35,9 @@ const get_all = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-
-  connection.end();
 
   res.status(200).json(results);
 };
@@ -90,8 +90,9 @@ const create_user = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-  connection.end();
 };
 
 const update_user = async (req, res) => {
@@ -143,8 +144,9 @@ const update_user = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-  connection.end();
 };
 
 const delete_user = async (req, res) => {
@@ -182,8 +184,9 @@ const delete_user = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-  connection.end();
 };
 
 module.exports = {

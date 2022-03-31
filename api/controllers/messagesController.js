@@ -39,9 +39,9 @@ const get_others_messages = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-
-  connection.end();
 
   res.status(200).json(results);
 };
@@ -80,9 +80,9 @@ const get_my_saved_messages = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-
-  connection.end();
 
   res.status(200).json(results);
 };
@@ -121,9 +121,9 @@ const get_my_sent_messages = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-
-  connection.end();
 
   res.status(200).json(results);
 };
@@ -149,9 +149,9 @@ const get_unseen_messages_count = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-
-  connection.end();
 };
 
 const create_message = async (req, res) => {
@@ -183,8 +183,9 @@ const create_message = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-  connection.end();
 };
 
 const update_message = async (req, res) => {
@@ -232,8 +233,9 @@ const update_message = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-  connection.end();
 };
 
 const delete_message = async (req, res) => {
@@ -300,9 +302,10 @@ const delete_message = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
   res.status(200).json({ message: `پیام مورد نظر با موفقیت حذف شد` });
-  connection.end();
 };
 
 module.exports = {

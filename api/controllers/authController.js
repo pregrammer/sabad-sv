@@ -14,7 +14,8 @@ const createToken = (user_payload) => {
 const login = async (req, res) => {
   const { email, password } = req.body; //, rememberme
 
-  if (!email || !password) { // || rememberme === undefined
+  if (!email || !password) {
+    // || rememberme === undefined
     return res
       .status(400)
       .json({ message: "اطلاعات ارسالی جهت ورود به سامانه ناقص است" });
@@ -32,7 +33,7 @@ const login = async (req, res) => {
 
   try {
     const [result1, fields1] = await connection.execute(
-      `select * from users where email='${email}'`
+      `select * from users join field_of_studies on users.field_of_study_id=field_of_studies.id where email='${email}'`
     );
     if (result1.length !== 0) {
       const isSame = await bcrypt.compare(password, result1[0].password);
@@ -44,6 +45,7 @@ const login = async (req, res) => {
           lastName: result1[0].lastName,
           role: result1[0].role,
           field_of_study_id: result1[0].field_of_study_id,
+          field_of_study_name: result1[0].name,
         };
         const token = createToken(user_payload);
         res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
@@ -63,9 +65,9 @@ const login = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-
-  connection.end();
 };
 
 const logout = (req, res) => {

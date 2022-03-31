@@ -34,10 +34,9 @@ const get_all = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-
-  connection.end();
-
   res.status(200).json(results);
 };
 
@@ -73,8 +72,9 @@ const create_fos = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-  connection.end();
 };
 
 const update_fos = async (req, res) => {
@@ -113,8 +113,9 @@ const update_fos = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-  connection.end();
 };
 
 const delete_fos = async (req, res) => {
@@ -152,8 +153,9 @@ const delete_fos = async (req, res) => {
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+  } finally {
+    connection.end();
   }
-  connection.end();
 };
 
 module.exports = {
