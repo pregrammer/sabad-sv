@@ -46,13 +46,13 @@ PUT http://localhost:3500/users
 content-type: application/json
 
 { 
-    "id":"58",
-    "email":"ali@yahoo.com60",
-    "password":"1234",
+    "id":"1",
+    "email":"ali@yahoo.com1",
+    "password":"aa111",
     "firstName":"a",
     "lastName":"b",
-    "role":"2",
-    "field_of_study_id":"6"
+    "role":"1",
+    "field_of_study_id":"1"
 }
 ###################
 
@@ -68,13 +68,55 @@ POST http://localhost:3500/auth/login
 content-type: application/json
 
 { 
-    "email":"ali@yahoo.com60",
-    "password":"1234",
-    "rememberme":true
+    "email":"ali@yahoo.com1",
+    "password":"aa111"
 }
 ###################
 
 http://localhost:3500/auth/logout
+
+############################################################################
+
+http://localhost:3500/messages/others?page=1&limit=10
+###################
+
+http://localhost:3500/messages/saved?page=1&limit=10
+###################
+
+http://localhost:3500/messages/sent?page=1&limit=10
+###################
+
+http://localhost:3500/messages/unseen-count
+###################
+
+POST http://localhost:3500/messages
+content-type: application/json
+
+{
+    "title":"با سلام",
+    "body":"کار را انجان دهید",
+    "to_user_id":"5"
+}
+###################
+
+PUT http://localhost:3500/messages
+content-type: application/json
+
+{
+    "id":"59",
+    "title":"4با سلام",
+    "body":"4کار را انجان دهید",
+    "to_user_id":"10"
+}
+###################
+
+DELETE http://localhost:3500/messages
+content-type: application/json
+
+{
+    "id":"8",
+    "forBoth":true
+}
 
 ############################################################################
 

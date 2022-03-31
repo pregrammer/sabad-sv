@@ -28,7 +28,7 @@ const get_all = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      "select * from users limit " + limit + " OFFSET " + startIndex
+      `select * from users join field_of_studies on users.field_of_study_id=field_of_studies.id limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
   } catch (error) {

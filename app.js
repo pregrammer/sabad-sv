@@ -21,10 +21,19 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Routes which should handle requests
+///////////////////////////
 app.use("/auth", require("./api/routes/authRoutes"));
 app.use("*", requireAuth);
 app.use("/field_of_studies", require("./api/routes/field_of_studiesRoutes"));
 app.use("/users", require("./api/routes/usersRoutes"));
+app.use("/messages", require("./api/routes/messagesRoutes"));
+app.use("/colleges", require("./api/routes/collegesRoutes"));
+app.use("/times", require("./api/routes/timesRoutes"));
+app.use("/professors", require("./api/routes/professorsRoutes"));
+app.use("/classes", require("./api/routes/classesRoutes"));
+app.use("/courses", require("./api/routes/coursesRoutes"));
+app.use("/semesters", require("./api/routes/semestersRoutes"));
+app.use("/schedules", require("./api/routes/schedulesRoutes"));
 
 // route not found
 app.all("*", (req, res) => {
