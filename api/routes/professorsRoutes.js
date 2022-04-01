@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const {
-  get_all,
   get_all_by_filter,
   create_professor,
   update_professor,
@@ -9,8 +8,7 @@ const {
 } = require("../controllers/professorsController");
 const { isAdmin } = require("../middlewares/authMiddlewares");
 
-router.get("/", get_all);
-router.get("/filter", get_all_by_filter);
+router.get("/", get_all_by_filter);
 router.post("/", isAdmin, create_professor);
 router.put("/", isAdmin, update_professor);
 router.delete("/", isAdmin, delete_professor);

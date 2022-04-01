@@ -27,7 +27,10 @@ const get_all = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      "select * from field_of_studies limit " + limit + " OFFSET " + startIndex
+      "select * from field_of_studies order by id desc limit " +
+        limit +
+        " OFFSET " +
+        startIndex
     );
     results.result = result2;
   } catch (error) {
@@ -96,7 +99,7 @@ const update_fos = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from field_of_studies where id='${id}'`
+      `select * from field_of_studies where id = ${id}`
     );
 
     if (result1.length === 0)
@@ -105,7 +108,7 @@ const update_fos = async (req, res) => {
         .json({ message: "رشته ای مطابق با آیدی ارسالی وجود ندارد" });
 
     const [result2, fields2] = await connection.execute(
-      `update field_of_studies set name = '${name}' where id = '${id}'`
+      `update field_of_studies set name = '${name}' where id = ${id}`
     );
 
     res.status(201).json({ message: `رشته ی مورد نظر با موفقیت ویرایش شد` });
@@ -136,7 +139,7 @@ const delete_fos = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from field_of_studies where id='${id}'`
+      `select * from field_of_studies where id = ${id}`
     );
 
     if (result1.length === 0)
@@ -145,7 +148,7 @@ const delete_fos = async (req, res) => {
         .json({ message: "رشته ای مطابق با آیدی ارسالی وجود ندارد" });
 
     const [result2, fields2] = await connection.execute(
-      `delete from field_of_studies where id = '${id}'`
+      `delete from field_of_studies where id = ${id}`
     );
 
     res.status(200).json({ message: `رشته ی مورد نظر با موفقیت حذف شد` });

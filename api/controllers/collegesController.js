@@ -27,7 +27,10 @@ const get_all = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      "select * from colleges limit " + limit + " OFFSET " + startIndex
+      "select * from colleges order by id desc limit " +
+        limit +
+        " OFFSET " +
+        startIndex
     );
     results.result = result2;
   } catch (error) {
@@ -98,7 +101,7 @@ const update_college = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from colleges where id='${id}'`
+      `select * from colleges where id = ${id}`
     );
 
     if (result1.length === 0)
@@ -107,7 +110,7 @@ const update_college = async (req, res) => {
         .json({ message: "دانشکده ای مطابق با آیدی ارسالی وجود ندارد" });
 
     const [result2, fields2] = await connection.execute(
-      `update colleges set name = '${name}' where id = '${id}'`
+      `update colleges set name = '${name}' where id = ${id}`
     );
 
     res.status(201).json({ message: `دانشکده ی مورد نظر با موفقیت ویرایش شد` });
@@ -138,7 +141,7 @@ const delete_college = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from colleges where id='${id}'`
+      `select * from colleges where id = ${id}`
     );
 
     if (result1.length === 0)
@@ -147,7 +150,7 @@ const delete_college = async (req, res) => {
         .json({ message: "دانشکده ای مطابق با آیدی ارسالی وجود ندارد" });
 
     const [result2, fields2] = await connection.execute(
-      `delete from colleges where id = '${id}'`
+      `delete from colleges where id = ${id}`
     );
 
     res.status(200).json({ message: `دانشکده ی مورد نظر با موفقیت حذف شد` });

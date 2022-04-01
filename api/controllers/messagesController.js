@@ -28,12 +28,14 @@ const get_others_messages = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      `select messages.id, messages.title, messages.body, messages.isSeen, messages.created_at, users.firstName, users.lastName, field_of_studies.name as field_of_study from messages join users on messages.from_user_id=users.id join field_of_studies on users.field_of_study_id=field_of_studies.id where to_user_id=${id} and from_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id}) limit ${limit} OFFSET ${startIndex}`
+      `select messages.id, messages.title, messages.body, messages.isSeen, messages.created_at, users.firstName, users.lastName, field_of_studies.name as field_of_study from messages join users on messages.from_user_id=users.id join field_of_studies on users.field_of_study_id=field_of_studies.id where to_user_id=${id} and from_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id}) order by messages.id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
 
     const [result3, fields3] = await connection.execute(
-      `update messages set isSeen=true where to_user_id=${id} and from_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id})`
+      `update messages set isSeen=true where to_user_id=${id} and from_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id}) and id in (${result2.map(
+        (res) => res.id
+      )})`
     );
   } catch (error) {
     return res
@@ -73,7 +75,7 @@ const get_my_saved_messages = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      `select id, title, body, created_at from messages where to_user_id=${id} and from_user_id=${id} limit ${limit} OFFSET ${startIndex}`
+      `select id, title, body, created_at from messages where to_user_id=${id} and from_user_id=${id} order by id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
   } catch (error) {
@@ -114,7 +116,7 @@ const get_my_sent_messages = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      `select id, title, body, isSeen, created_at from messages where from_user_id=${id} and to_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id}) limit ${limit} OFFSET ${startIndex}`
+      `select id, title, body, isSeen, to_user_id, created_at from messages where from_user_id=${id} and to_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id}) order by id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
   } catch (error) {
@@ -173,7 +175,7 @@ const create_message = async (req, res) => {
 
   try {
     const [result1, fields1] = await connection.execute(
-      `insert into messages (title, body, to_user_id, from_user_id, created_at) values ('${title}', '${body}', '${to_user_id}', '${
+      `insert into messages (title, body, to_user_id, from_user_id, created_at) values ('${title}', '${body}', ${to_user_id}, '${
         req.user.id
       }', '${Date()}')`
     );
@@ -208,7 +210,7 @@ const update_message = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from messages where id='${id}'`
+      `select * from messages where id = ${id}`
     );
     if (result1.length === 0)
       return res
@@ -217,7 +219,7 @@ const update_message = async (req, res) => {
 
     // check message to be unseen
     const [result2, fields2] = await connection.execute(
-      `select * from messages where id='${id}' and isSeen=true`
+      `select * from messages where id = ${id} and isSeen=true`
     );
     if (result2.length !== 0)
       return res.status(403).json({
@@ -225,7 +227,7 @@ const update_message = async (req, res) => {
       });
 
     const [result3, fields3] = await connection.execute(
-      `update messages set title='${title}', body='${body}', to_user_id='${to_user_id}' where id='${id}'`
+      `update messages set title='${title}', body='${body}', to_user_id=${to_user_id} where id=${id}`
     );
 
     res.status(201).json({ message: `پیام مورد نظر با موفقیت ویرایش شد` });
@@ -258,7 +260,7 @@ const delete_message = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from messages where id='${id}'`
+      `select * from messages where id = ${id}`
     );
 
     if (result1.length === 0)
@@ -269,7 +271,7 @@ const delete_message = async (req, res) => {
     if (forBoth) {
       // check message to be unseen
       const [result2, fields2] = await connection.execute(
-        `select * from messages where id='${id}' and isSeen=true`
+        `select * from messages where id = ${id} and isSeen=true`
       );
       if (result2.length !== 0)
         return res.status(403).json({
@@ -277,11 +279,11 @@ const delete_message = async (req, res) => {
             "این پیام توسط کاربر دیده شده و امکان تغییر در آن وجود ندارد",
         });
       const [result4, fields4] = await connection.execute(
-        `delete from messages where id = '${id}'`
+        `delete from messages where id = ${id}`
       );
     } else {
       const [result3, fields3] = await connection.execute(
-        `select to_user_id, from_user_id, deletedFor_user_id from messages where id='${id}'`
+        `select to_user_id, from_user_id, deletedFor_user_id from messages where id = ${id}`
       );
 
       if (
@@ -290,11 +292,11 @@ const delete_message = async (req, res) => {
         result3[0].deletedFor_user_id !== null
       ) {
         const [result4, fields4] = await connection.execute(
-          `delete from messages where id = '${id}'`
+          `delete from messages where id = ${id}`
         );
       } else {
         const [result4, fields4] = await connection.execute(
-          `update messages set deletedFor_user_id = '${req.user.id}' where id = '${id}'`
+          `update messages set deletedFor_user_id = ${req.user.id} where id = ${id}`
         );
       }
     }

@@ -27,7 +27,10 @@ const get_all = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      "select * from times limit " + limit + " OFFSET " + startIndex
+      "select * from times order by id desc limit " +
+        limit +
+        " OFFSET " +
+        startIndex
     );
     results.result = result2;
   } catch (error) {
@@ -58,14 +61,14 @@ const create_time = async (req, res) => {
   try {
     // check for duplicate start and end time in the db
     const [result1, fields1] = await connection.execute(
-      `select * from times where start='${start}' and end='${end}'`
+      `select * from times where start = ${start} and end = ${end}`
     );
 
     if (result1.length !== 0)
       return res.status(409).json({ message: "این زمان قبلا وارد شده است" });
 
     const [result2, fields2] = await connection.execute(
-      `insert into times (start, end) values('${start}', '${end}')`
+      `insert into times (start, end) values(${start}, ${end})`
     );
 
     res.status(201).json({ message: `زمان مورد نظر با موفقیت ثبت شد` });
@@ -98,7 +101,7 @@ const update_time = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from times where id='${id}'`
+      `select * from times where id = ${id}`
     );
 
     if (result1.length === 0)
@@ -107,7 +110,7 @@ const update_time = async (req, res) => {
         .json({ message: "زمانی مطابق با آیدی ارسالی وجود ندارد" });
 
     const [result2, fields2] = await connection.execute(
-      `update times set start = '${start}', end = '${end}' where id = '${id}'`
+      `update times set start = ${start}, end = ${end} where id = ${id}`
     );
 
     res.status(201).json({ message: `زمان مورد نظر با موفقیت ویرایش شد` });
@@ -138,7 +141,7 @@ const delete_time = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from times where id='${id}'`
+      `select * from times where id = ${id}`
     );
 
     if (result1.length === 0)
@@ -147,7 +150,7 @@ const delete_time = async (req, res) => {
         .json({ message: "زمانی مطابق با آیدی ارسالی وجود ندارد" });
 
     const [result2, fields2] = await connection.execute(
-      `delete from times where id = '${id}'`
+      `delete from times where id = ${id}`
     );
 
     res.status(200).json({ message: `زمان مورد نظر با موفقیت حذف شد` });

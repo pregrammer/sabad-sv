@@ -114,7 +114,7 @@ DELETE http://localhost:3500/messages
 content-type: application/json
 
 {
-    "id":8,
+    "id":1,
     "forBoth":true
 }
 
@@ -177,9 +177,8 @@ content-type: application/json
     "id":56
 }
 ############################################################################
+
 http://localhost:3500/professors?page=1&limit=10
-###################
-http://localhost:3500/professors/filter/?page=1&limit=10
 content-type: application/json
 
 { 
@@ -199,7 +198,7 @@ content-type: application/json
     "isInvited":true,
     "email":"ali@yahoo.com60",
     "phoneNumber":"09125648796",
-    "field_of_study_id":"1"
+    "field_of_study_id":1
 }
 ###################
 
@@ -207,14 +206,14 @@ PUT http://localhost:3500/professors
 content-type: application/json
 
 { 
-    "id":60,
+    "id":1,
     "firstName":"c",
     "lastName":"d",
     "lastGrade":2,
-    "isInvited":false,
+    "isInvited":true,
     "email":"ali@yahoo.com6000",
     "phoneNumber":"09125648733",
-    "field_of_study_id":"3"
+    "field_of_study_id":3
 }
 ###################
 
@@ -223,5 +222,46 @@ content-type: application/json
 
 {
     "id":59
+}
+############################################################################
+
+http://localhost:3500/classes?page=1&limit=10
+content-type: application/json
+
+{ 
+    "college_id":"all",
+    "hasProjector":"all",
+    "capacity":"all"
+}
+###################
+
+POST http://localhost:3500/classes
+content-type: application/json
+
+{ 
+    "title":"کارگاهی 3",
+    "capacity":60,
+    "hasProjector":false,
+    "college_id":12
+}
+###################
+
+PUT http://localhost:3500/classes
+content-type: application/json
+
+{ 
+    "id":61,
+    "title":"کارگاهی 4",
+    "capacity":80,
+    "hasProjector":true,
+    "college_id":2
+}
+###################
+
+DELETE http://localhost:3500/classes
+content-type: application/json
+
+{
+    "id":61
 }
 ############################################################################

@@ -1,7 +1,7 @@
 const mysql = require("mysql2/promise");
 const dbConfig = require("../config/dbConfig");
 
-const get_all = async (req, res) => {
+/* const get_all = async (req, res) => {
   //connect to db
   let connection;
   try {
@@ -39,7 +39,7 @@ const get_all = async (req, res) => {
   }
 
   res.status(200).json(results);
-};
+}; */
 
 const get_all_by_filter = async (req, res) => {
   const { field_of_study_id, isInvited, lastGrade } = req.body;
@@ -97,7 +97,7 @@ const get_all_by_filter = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      `select * from professors join field_of_studies on professors.field_of_study_id=field_of_studies.id${where_clause} limit ${limit} OFFSET ${startIndex}`
+      `select professors.id, firstName, lastName, lastGrade, isInvited, email, phoneNumber, field_of_study_id, name as field_of_study_name from professors join field_of_studies on professors.field_of_study_id=field_of_studies.id${where_clause} order by professors.id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
   } catch (error) {
@@ -156,7 +156,7 @@ const create_professor = async (req, res) => {
         .json({ message: "این ایمیل قبلا برای استاد دیگری وارد شده است" });
 
     const [result2, fields2] = await connection.execute(
-      `insert into professors (firstName, lastName, lastGrade, isInvited, email, phoneNumber, field_of_study_id) values ('${firstName}', '${lastName}', '${lastGrade}', ${isInvited}, '${email}', '${phoneNumber}', '${field_of_study_id}')`
+      `insert into professors (firstName, lastName, lastGrade, isInvited, email, phoneNumber, field_of_study_id) values ('${firstName}', '${lastName}', ${lastGrade}, ${isInvited}, '${email}', '${phoneNumber}', ${field_of_study_id})`
     );
 
     res.status(201).json({ message: `استاد مورد نظر با موفقیت ثبت شد` });
@@ -207,7 +207,7 @@ const update_professor = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from professors where id='${id}'`
+      `select * from professors where id=${id}`
     );
 
     if (result1.length === 0)
@@ -216,7 +216,7 @@ const update_professor = async (req, res) => {
         .json({ message: "استادی مطابق با آیدی ارسالی وجود ندارد" });
 
     const [result2, fields2] = await connection.execute(
-      `update professors set firstName = '${firstName}', lastName = '${lastName}', lastGrade = '${lastGrade}', isInvited = '${isInvited}', email = '${email}', phoneNumber = '${phoneNumber}', field_of_study_id = '${field_of_study_id}' where id = '${id}'`
+      `update professors set firstName = '${firstName}', lastName = '${lastName}', lastGrade = ${lastGrade}, isInvited = ${isInvited}, email = '${email}', phoneNumber = '${phoneNumber}', field_of_study_id = ${field_of_study_id} where id = ${id}`
     );
 
     res.status(201).json({ message: `استاد مورد نظر با موفقیت ویرایش شد` });
@@ -247,7 +247,7 @@ const delete_professor = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from professors where id='${id}'`
+      `select * from professors where id = ${id}`
     );
 
     if (result1.length === 0)
@@ -256,7 +256,7 @@ const delete_professor = async (req, res) => {
         .json({ message: "استادی مطابق با آیدی ارسالی وجود ندارد" });
 
     const [result2, fields2] = await connection.execute(
-      `delete from professors where id = '${id}'`
+      `delete from professors where id = ${id}`
     );
 
     res.status(200).json({ message: `استاد مورد نظر با موفقیت حذف شد` });
@@ -270,7 +270,6 @@ const delete_professor = async (req, res) => {
 };
 
 module.exports = {
-  get_all,
   get_all_by_filter,
   create_professor,
   update_professor,
