@@ -265,3 +265,231 @@ content-type: application/json
     "id":61
 }
 ############################################################################
+
+http://localhost:3500/courses?page=1&limit=10
+content-type: application/json
+
+{ 
+    "field_of_study_id":"all",
+    "termNumber":"all",
+    "kind":"all"
+}
+###################
+
+POST http://localhost:3500/courses
+content-type: application/json
+
+{ 
+    "name":"a",
+    "code":"111222",
+    "unit":2,
+    "kind":"b",
+    "grade":1,
+    "termNumber":6,
+    "prerequisite_id":3,
+    "need_id":9,
+    "field_of_study_id":10
+}
+###################
+
+PUT http://localhost:3500/courses
+content-type: application/json
+
+{ 
+    "id":59,
+    "name":"b",
+    "code":"333444",
+    "unit":3,
+    "kind":"c",
+    "grade":2,
+    "termNumber":8,
+    "prerequisite_id":6,
+    "need_id":10,
+    "field_of_study_id":11
+}
+###################
+
+DELETE http://localhost:3500/courses
+content-type: application/json
+
+{
+    "id":59
+}
+############################################################################
+
+http://localhost:3500/semesters?page=1&limit=10
+content-type: application/json
+
+{ 
+    "hasTestDates":true
+}
+###################
+
+POST http://localhost:3500/semesters
+content-type: application/json
+
+{ 
+    "educationYear":1405,
+    "yearPart":2,
+    "semesterDate":"s_mon",
+    "unitDate":"u_mon",
+    "editUnitDate":"e_mon",
+    "first":"1_mon",
+    "second":"2_mon",
+    "third":"3_mon",
+    "fourth":"4_mon",
+    "fifth":"5_mon",
+    "sixth":"6_mon",
+    "seventh":"7_mon",
+    "eighth":"8_mon",
+    "ninth":"9_mon",
+    "tenth":"10_mon",
+    "eleventh":"11_mon",
+    "twelfth":"12_mon",
+    "thirteenth":"13_mon",
+    "fourteenth":"14_mon"
+}
+###################
+
+PUT http://localhost:3500/semesters
+content-type: application/json
+
+{ 
+    "id":59,
+    "test_date_id":59,
+    "educationYear":1406,
+    "yearPart":3,
+    "semesterDate":"s_monday",
+    "unitDate":"u_monday",
+    "editUnitDate":"e_monday",
+    "first":"1_monday",
+    "second":"2_monday",
+    "third":"3_monday",
+    "fourth":"4_monday",
+    "fifth":"5_monday",
+    "sixth":"6_monday",
+    "seventh":"7_monday",
+    "eighth":"8_monday",
+    "ninth":"9_monday",
+    "tenth":"10_monday",
+    "eleventh":"11_monday",
+    "twelfth":"12_monday",
+    "thirteenth":"13_monday",
+    "fourteenth":"14_monday"
+}
+###################
+
+DELETE http://localhost:3500/semesters
+content-type: application/json
+
+{
+    "id":59,
+    "test_date_id":59
+}
+############################################################################
+http://localhost:3500/schedules/weekly
+content-type: application/json
+
+{ 
+    "field_of_study_id":"all",
+    "professor_id":"all",
+    "termNumber":"odd",
+    "class_id":"all"
+}
+###################
+http://localhost:3500/schedules/test
+content-type: application/json
+
+{ 
+    "field_of_study_id":"all",
+    "professor_id":"all",
+    "termNumber":"even"
+}
+###################
+http://localhost:3500/schedules/schedule
+content-type: application/json
+
+{ 
+    "id":57
+}
+###################
+
+http://localhost:3500/schedules/class-free-times
+content-type: application/json
+
+{ 
+    "class_id":69
+}
+###################
+POST http://localhost:3500/schedules
+content-type: application/json
+
+{
+    "testDay":1405,
+    "testDayPart":2,
+    "maxCapacity":30,
+    "minCapacity":10,
+    "courseGroup":1,
+    "weekKindClass1":2,
+    "weekKindClass2":1,
+    "field_of_study_id":43,
+    "semester_id":44,
+    "course_id":55,
+    "professor_id":33,
+    "host_field_of_study_id":27,
+    "class1_id":35,
+    "class2_id":45,
+    "submitter_user_id":21,
+    "accessibleFor_user_id":12,
+    "time1_id":42,
+    "time2_id":2
+}
+###################
+
+POST http://localhost:3500/schedules/send-email
+content-type: application/json
+
+{
+    "professor_id":69
+}
+###################
+PUT http://localhost:3500/schedules
+content-type: application/json
+
+{ 
+    "id":69,
+    "testDay":1405,
+    "testDayPart":2,
+    "maxCapacity":30,
+    "minCapacity":10,
+    "courseGroup":1,
+    "weekKindClass1":2,
+    "weekKindClass2":1,
+    "field_of_study_id":43,
+    "semester_id":44,
+    "course_id":55,
+    "professor_id":33,
+    "host_field_of_study_id":27,
+    "class1_id":35,
+    "class2_id":45,
+    "submitter_user_id":21,
+    "accessibleFor_user_id":12,
+    "time1_id":42,
+    "time2_id":2
+}
+###################
+
+PUT http://localhost:3500/schedules/change-state
+content-type: application/json
+
+{ 
+    "id":69
+}
+###################
+
+DELETE http://localhost:3500/schedules
+content-type: application/json
+
+{
+    "id":69
+}

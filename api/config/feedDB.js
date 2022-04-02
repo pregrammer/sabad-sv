@@ -226,12 +226,138 @@ app.get("/", async (req, res) => {
 });
 
 /////////////////////////////////////////////// courses
+const mysql = require("mysql2/promise");
+const dbConfig = require("./api/config/dbConfig");
+app.get("/", async (req, res) => {
 
+  let connection;
+  try {
+    connection = await mysql.createConnection(dbConfig);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "خطا در برقراری ارتباط با پایگاه داده" });
+  }
+
+  for (let i = 1; i < 59; i++) {
+    const name = i + "مبانی بازیابی اطلاعات و جستجوی وب";
+    const code = Math.floor(Math.random() * (1000000 - 100000)) + 100000;
+    const unit = Math.floor(Math.random() * 3) + 1;
+    const kind = i + "کارگاهی - آزمایشگاهی";
+    const grade = Math.floor(Math.random() * 3) + 1;
+    const termNumber = Math.floor(Math.random() * 8) + 1;
+    const prerequisite_id = Math.floor(Math.random() * 58) + 1;
+    const need_id = Math.floor(Math.random() * 58) + 1;
+    const field_of_study_id = Math.floor(Math.random() * 58) + 1;
+
+    const query = `insert into courses (name, code, unit, kind, grade, termNumber, prerequisite_id, need_id, field_of_study_id) values ('${name}', '${code}', ${unit}, '${kind}', ${grade}, ${termNumber}, ${prerequisite_id}, ${need_id}, ${field_of_study_id})`;
+
+    try {
+      const [result2, fields2] = await connection.execute(query);      
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+    }
+  }
+
+  connection.end();
+  res.status(201).send({ message: `درس ها با موفقیت ثبت شدند` });
+});
 
 /////////////////////////////////////////////// semesters
+const mysql = require("mysql2/promise");
+const dbConfig = require("./api/config/dbConfig");
+app.get("/", async (req, res) => {
+  let connection;
+  try {
+    connection = await mysql.createConnection(dbConfig);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "خطا در برقراری ارتباط با پایگاه داده" });
+  }
 
+  for (let i = 1; i < 59; i++) {
+    const educationYear = Math.floor(Math.random() * (1402 - 1386)) + 1386;
+    const yearPart = Math.floor(Math.random() * 3) + 1;
+    const query1 = `insert into test_dates (first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, eleventh, twelfth, thirteenth, fourteenth) values ('${
+      "1_wednesday" + i
+    }', '${"2_wednesday" + i}', '${"3_wednesday" + i}', '${
+      "4_wednesday" + i
+    }', '${"5_wednesday" + i}', '${"6_wednesday" + i}', '${
+      "7_wednesday" + i
+    }', '${"8_wednesday" + i}', '${"9_wednesday" + i}', '${
+      "10_wednesday" + i
+    }', '${"11_wednesday" + i}', '${"12_wednesday" + i}', '${
+      "13_wednesday" + i
+    }', '${"14_wednesday" + i}')`;
+
+    try {
+      const [result1, fields1] = await connection.execute(query1);
+      const test_date_id = result1.insertId;
+
+      const query2 = `insert into semesters (educationYear, yearPart, semesterDate, unitDate, editUnitDate, test_date_id) values (${educationYear}, ${yearPart}, '${
+        "s_sunday" + i
+      }', '${"u_sunday" + i}', '${"e_sunday" + i}', ${test_date_id})`;
+      const [result2, fields2] = await connection.execute(query2);
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+    }
+  }
+
+  connection.end();
+  res.status(201).send({ message: `نیمسال ها با موفقیت ثبت شدند` });
+});
 
 /////////////////////////////////////////////// schedules
+const mysql = require("mysql2/promise");
+const dbConfig = require("./api/config/dbConfig");
+app.get("/", async (req, res) => {
+  let connection;
+  try {
+    connection = await mysql.createConnection(dbConfig);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "خطا در برقراری ارتباط با پایگاه داده" });
+  }
 
+  for (let i = 1; i < 59; i++) {
+    const testDay = Math.floor(Math.random() * 15) + 1;
+    const testDayPart = Math.floor(Math.random() * 3) + 1;
+    const maxCapacity = Math.floor(Math.random() * 60) + 30;
+    const minCapacity = Math.floor(Math.random() * 30) + 10;
+    const courseGroup = Math.floor(Math.random() * 3) + 1;
+    const weekKindClass1 = Math.floor(Math.random() * 3) + 1;
+    const weekKindClass2 = Math.floor(Math.random() * 3) + 1;
+    const isCertain = (Math.floor(Math.random() * 2) === 1 ? true:false);
+    const field_of_study_id = Math.floor(Math.random() * 58) + 1;
+    const semester_id  = Math.floor(Math.random() * 58) + 1;
+    const course_id  = Math.floor(Math.random() * 58) + 1;
+    const professor_id  = Math.floor(Math.random() * 58) + 1;
+    const host_field_of_study_id  = Math.floor(Math.random() * 58) + 1;
+    const class1_id = Math.floor(Math.random() * 58) + 1;
+    const class2_id = Math.floor(Math.random() * 58) + 1;
+    const submitter_user_id = Math.floor(Math.random() * 58) + 1;
+    const accessibleFor_user_id  = Math.floor(Math.random() * 58) + 1;
+    const time1_id  = Math.floor(Math.random() * 58) + 1;
+    const time2_id  = Math.floor(Math.random() * 58) + 1;
 
+    const query = `insert into schedules (testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, weekKindClass2, isCertain, field_of_study_id, semester_id, course_id, professor_id, host_field_of_study_id, class1_id, class2_id, submitter_user_id, accessibleFor_user_id, time1_id, time2_id) values (${testDay}, ${testDayPart}, ${maxCapacity}, ${minCapacity}, ${courseGroup}, ${weekKindClass1}, ${weekKindClass2}, ${isCertain}, ${field_of_study_id}, ${semester_id}, ${course_id}, ${professor_id}, ${host_field_of_study_id}, ${class1_id}, ${class2_id}, ${submitter_user_id}, ${accessibleFor_user_id}, ${time1_id}, ${time2_id})`;
+
+    try {
+      const [result2, fields2] = await connection.execute(query);
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+    }
+  }
+
+  connection.end();
+  res.status(201).send({ message: `درس ها با موفقیت در برنامه ثبت شدند` });
+});
 */
