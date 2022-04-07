@@ -33,6 +33,7 @@ const get_all = async (req, res) => {
         startIndex
     );
     results.result = result2;
+    res.status(200).json(results);
   } catch (error) {
     return res
       .status(500)
@@ -40,7 +41,6 @@ const get_all = async (req, res) => {
   } finally {
     connection.end();
   }
-  res.status(200).json(results);
 };
 
 const create_college = async (req, res) => {

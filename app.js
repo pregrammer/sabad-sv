@@ -21,6 +21,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Routes which should handle requests
+
 ///////////////////////////
 app.use("/auth", require("./api/routes/authRoutes"));
 app.use("*", requireAuth);

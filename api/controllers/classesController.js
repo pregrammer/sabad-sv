@@ -71,9 +71,11 @@ const get_all_by_filter = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      `select classes.id, classes.title, classes.capacity, classes.hasProjector, college_id, colleges.name as college_name from classes join colleges on classes.college_id=colleges.id${where_clause} order by classes.id desc limit ${limit} OFFSET ${startIndex}`
+      `select classes.id, classes.title, classes.capacity, classes.hasProjector, college_id, colleges.name as college_name 
+      from classes join colleges on classes.college_id=colleges.id${where_clause} order by classes.id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
+    res.status(200).json(results);
   } catch (error) {
     return res
       .status(500)
@@ -81,8 +83,6 @@ const get_all_by_filter = async (req, res) => {
   } finally {
     connection.end();
   }
-
-  res.status(200).json(results);
 };
 
 const create_class = async (req, res) => {

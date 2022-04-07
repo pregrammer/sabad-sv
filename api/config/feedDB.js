@@ -333,20 +333,22 @@ app.get("/", async (req, res) => {
     const courseGroup = Math.floor(Math.random() * 3) + 1;
     const weekKindClass1 = Math.floor(Math.random() * 3) + 1;
     const weekKindClass2 = Math.floor(Math.random() * 3) + 1;
-    const isCertain = (Math.floor(Math.random() * 2) === 1 ? true:false);
+    const isCertain = Math.floor(Math.random() * 2) === 1 ? true : false;
     const field_of_study_id = Math.floor(Math.random() * 58) + 1;
-    const semester_id  = Math.floor(Math.random() * 58) + 1;
-    const course_id  = Math.floor(Math.random() * 58) + 1;
-    const professor_id  = Math.floor(Math.random() * 58) + 1;
-    const host_field_of_study_id  = Math.floor(Math.random() * 58) + 1;
+    const semester_id = Math.floor(Math.random() * 58) + 1;
+    const course_id = Math.floor(Math.random() * 58) + 1;
+    const professor_id = Math.floor(Math.random() * 58) + 1;
+    const host_field_of_study_id = Math.floor(Math.random() * 58) + 1;
     const class1_id = Math.floor(Math.random() * 58) + 1;
     const class2_id = Math.floor(Math.random() * 58) + 1;
     const submitter_user_id = Math.floor(Math.random() * 58) + 1;
-    const accessibleFor_user_id  = Math.floor(Math.random() * 58) + 1;
-    const time1_id  = Math.floor(Math.random() * 58) + 1;
-    const time2_id  = Math.floor(Math.random() * 58) + 1;
+    const accessibleFor_user_id = Math.floor(Math.random() * 58) + 1;
+    const time1_id = Math.floor(Math.random() * 58) + 1;
+    const time2_id = Math.floor(Math.random() * 58) + 1;
+    const weekDay1 = Math.floor(Math.random() * 6) + 1;
+    const weekDay2 = Math.floor(Math.random() * 6) + 1;
 
-    const query = `insert into schedules (testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, weekKindClass2, isCertain, field_of_study_id, semester_id, course_id, professor_id, host_field_of_study_id, class1_id, class2_id, submitter_user_id, accessibleFor_user_id, time1_id, time2_id) values (${testDay}, ${testDayPart}, ${maxCapacity}, ${minCapacity}, ${courseGroup}, ${weekKindClass1}, ${weekKindClass2}, ${isCertain}, ${field_of_study_id}, ${semester_id}, ${course_id}, ${professor_id}, ${host_field_of_study_id}, ${class1_id}, ${class2_id}, ${submitter_user_id}, ${accessibleFor_user_id}, ${time1_id}, ${time2_id})`;
+    const query = `insert into schedules (testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, weekKindClass2, weekDay1, weekDay2, isCertain, field_of_study_id, semester_id, course_id, professor_id, host_field_of_study_id, class1_id, class2_id, submitter_user_id, accessibleFor_user_id, time1_id, time2_id) values (${testDay}, ${testDayPart}, ${maxCapacity}, ${minCapacity}, ${courseGroup}, ${weekKindClass1}, ${weekKindClass2}, ${weekDay1}, ${weekDay2}, ${isCertain}, ${field_of_study_id}, ${semester_id}, ${course_id}, ${professor_id}, ${host_field_of_study_id}, ${class1_id}, ${class2_id}, ${submitter_user_id}, ${accessibleFor_user_id}, ${time1_id}, ${time2_id})`;
 
     try {
       const [result2, fields2] = await connection.execute(query);
@@ -360,4 +362,5 @@ app.get("/", async (req, res) => {
   connection.end();
   res.status(201).send({ message: `درس ها با موفقیت در برنامه ثبت شدند` });
 });
+
 */

@@ -71,19 +71,21 @@ const get_all_by_filter = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      `select courses.id, courses.name, courses.code, courses.unit, courses.kind, courses.grade, courses.termNumber, courses.prerequisite_id, pre.name as pre_name, courses.need_id, need.name as need_name, courses.field_of_study_id, field_of_studies.name as field_of_study_name from courses join field_of_studies on courses.field_of_study_id=field_of_studies.id join courses pre on courses.prerequisite_id=pre.id join courses need on courses.need_id=need.id${where_clause} order by courses.id desc limit ${limit} OFFSET ${startIndex}`
+      `select courses.id, courses.name, courses.code, courses.unit, courses.kind, courses.grade, courses.termNumber, 
+      courses.prerequisite_id, pre.name as pre_name, courses.need_id, need.name as need_name, courses.field_of_study_id, 
+      field_of_studies.name as field_of_study_name from courses join field_of_studies on courses.field_of_study_id=field_of_studies.id 
+      join courses pre on courses.prerequisite_id=pre.id join courses need on courses.need_id=need.id${where_clause} 
+      order by courses.id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
+    res.status(200).json(results);
   } catch (error) {
-    console.log(error);
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
   } finally {
     connection.end();
   }
-
-  res.status(200).json(results);
 };
 
 const create_course = async (req, res) => {
@@ -175,7 +177,7 @@ const update_course = async (req, res) => {
   )
     return res
       .status(400)
-      .json({ message: "اطلاعات ارسالی برای ثبت درس ناقص است" });
+      .json({ message: "اطلاعات ارسالی برای ویرایش درس ناقص است" });
 
   //connect to db
   let connection;

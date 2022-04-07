@@ -73,6 +73,8 @@ const create_semester = async (req, res) => {
     twelfth,
     thirteenth,
     fourteenth,
+    message_title,
+    message_body,
   } = req.body;
   if (
     !educationYear ||
@@ -93,7 +95,9 @@ const create_semester = async (req, res) => {
     !eleventh ||
     !twelfth ||
     !thirteenth ||
-    !fourteenth
+    !fourteenth ||
+    !message_title ||
+    !message_body
   )
     return res
       .status(400)
@@ -124,8 +128,21 @@ const create_semester = async (req, res) => {
     const query2 = `insert into semesters (educationYear, yearPart, semesterDate, unitDate, editUnitDate, test_date_id) values (${educationYear}, ${yearPart}, '${semesterDate}', '${unitDate}', '${editUnitDate}', ${test_date_id})`;
     const [result3, fields3] = await connection.execute(query2);
 
+    const [result4, fields4] = await connection.execute(
+      "select id from users where role=2"
+    );
+    result4.forEach(async (el) => {
+      const [result5, fields5] = await connection.execute(
+        `insert into messages (title, body, to_user_id, from_user_id, created_at) 
+        values ('${message_title}', '${message_body}', '${el.id}', '${
+          req.user.id
+        }', '${Date()}')`
+      );
+    });
+
     res.status(201).json({ message: `نیمسال مورد نظر با موفقیت ثبت شد` });
   } catch (error) {
+    console.log(error);
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
