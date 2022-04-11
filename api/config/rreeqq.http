@@ -68,7 +68,7 @@ POST http://localhost:3500/auth/login
 content-type: application/json
 
 { 
-    "email":"ali@yahoo.com1",
+    "email":"m_morteza_a@yahoo.com",
     "password":"aa111"
 }
 ###################
@@ -93,9 +93,9 @@ POST http://localhost:3500/messages
 content-type: application/json
 
 {
-    "title":"با سلام",
-    "body":"کار را انجان دهید",
-    "to_user_id":5
+    "title":"های",
+    "body":"گود؟",
+    "to_user_id":"sgm"
 }
 ###################
 
@@ -106,7 +106,7 @@ content-type: application/json
     "id":59,
     "title":"4با سلام",
     "body":"4کار را انجان دهید",
-    "to_user_id":"10"
+    "to_user_id":10
 }
 ###################
 
@@ -385,8 +385,8 @@ DELETE http://localhost:3500/semesters
 content-type: application/json
 
 {
-    "id":59,
-    "test_date_id":59
+    "id":12,
+    "test_date_id":12
 }
 ############################################################################
 http://localhost:3500/schedules
@@ -443,19 +443,19 @@ content-type: application/json
     "maxCapacity":30,
     "minCapacity":10,
     "courseGroup":6,
-    "semester_id":8,
+    "semester_id":45,
     "course_id":29,
-    "professor_id":9,
-    "host_field_of_study_id":8,
+    "professor_id":45,
+    "host_field_of_study_id":-1,
     "accessibleFor_user_id":12,
-    "class1_id":10,
-    "weekDay1":6,
+    "class1_id":19,
+    "weekDay1":1,
     "weekKindClass1":3,
-    "time1_id":14,
-    "class2_id":-1,
-    "weekDay2":-1,
-    "weekKindClass2":-1,
-    "time2_id":-1
+    "time1_id":4,
+    "class2_id":56,
+    "weekDay2":5,
+    "weekKindClass2":1,
+    "time2_id":51
 }
 ###################
 
@@ -463,8 +463,8 @@ POST http://localhost:3500/schedules/weekly-email
 content-type: application/json
 
 {
-    "professor_id":69,
-    "semester_id":32
+    "professor_id":11,
+    "semester_id":52
 }
 ###################
 
@@ -472,8 +472,8 @@ POST http://localhost:3500/schedules/test-email
 content-type: application/json
 
 {
-    "professor_id":69,
-    "semester_id":32
+    "professor_id":11,
+    "semester_id":52
 }
 ###################
 PUT http://localhost:3500/schedules

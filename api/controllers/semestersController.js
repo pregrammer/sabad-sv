@@ -1,5 +1,6 @@
 const mysql = require("mysql2/promise");
 const dbConfig = require("../config/dbConfig");
+const nodemailer = require("nodemailer");
 
 const get_all = async (req, res) => {
   const { hasTestDates } = req.body;
@@ -129,9 +130,11 @@ const create_semester = async (req, res) => {
     const [result3, fields3] = await connection.execute(query2);
 
     const [result4, fields4] = await connection.execute(
-      "select id from users where role=2"
+      "select id, email from users where role=2"
     );
+    let emails = "";
     result4.forEach(async (el) => {
+      emails += el.email;
       const [result5, fields5] = await connection.execute(
         `insert into messages (title, body, to_user_id, from_user_id, created_at) 
         values ('${message_title}', '${message_body}', '${el.id}', '${
@@ -139,6 +142,29 @@ const create_semester = async (req, res) => {
         }', '${Date()}')`
       );
     });
+
+    // email to users
+    //const transporter = nodemailer.createTransport({
+    //  host: "mail.travercymedia.com",
+    //  port: 587,
+    //  secure: false,
+    //  auth: {
+    //    user: "test@travercymedia.com",
+    //    pass: "123abc",
+    //  },
+    //  /* tls: { // this is for localhost
+    //      rejectUnauthorized: false,
+    //    }, */
+    //});
+
+    //const mailOptions = {
+    //  from: "test@travercymedia.com",
+    //  to: emails,
+    //  subject: message_title,
+    //  text: message_body,
+    //};
+
+    //let info = await transporter.sendMail(mailOptions);
 
     res.status(201).json({ message: `نیمسال مورد نظر با موفقیت ثبت شد` });
   } catch (error) {
@@ -267,6 +293,8 @@ const delete_semester = async (req, res) => {
         .status(400)
         .json({ message: "نیمسالی مطابق با آیدی های ارسالی وجود ندارد" });
 
+    await connection.beginTransaction();
+
     const [result2, fields2] = await connection.execute(
       `delete from semesters where id = ${id}`
     );
@@ -274,8 +302,11 @@ const delete_semester = async (req, res) => {
       `delete from test_dates where id = ${test_date_id}`
     );
 
+    await connection.commit();
+
     res.status(200).json({ message: `نیمسال مورد نظر با موفقیت حذف شد` });
   } catch (error) {
+    connection.rollback();
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });

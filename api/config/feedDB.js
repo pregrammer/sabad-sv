@@ -48,7 +48,8 @@ app.get("/", async (req, res) => {
   for (let i = 1; i < 59; i++) {
     const pwd = 'aa11' + i;
     const hashedPwd = await bcrypt.hash(pwd, 10);
-    const query = `insert into users (email, password, firstName, lastName, role, field_of_study_id) values ('ali@yahoo.com${i}', '${hashedPwd}', 'ali${i}', 'hosseini${i}', ${Math.floor(Math.random() * 4) + 1}, ${Math.floor(Math.random() * (58)) + 1})`;
+    const last_two_phoneNumber = Math.floor(Math.random() * (100 - 10)) + 10;
+    const query = `insert into users (email, password, firstName, lastName, phoneNumber, role, field_of_study_id) values ('ali@yahoo.com${i}', '${hashedPwd}', 'ali${i}', 'hosseini${i}', '091545879${last_two_phoneNumber}', ${Math.floor(Math.random() * 4) + 1}, ${Math.floor(Math.random() * (58)) + 1})`;
 
     try {
       const [result2, fields2] = await connection.execute(query);
@@ -364,3 +365,28 @@ app.get("/", async (req, res) => {
 });
 
 */
+
+
+
+
+/* integer semantic values stored in database
+
+user:
+  role = 1 (admin) || 2 (specialized group manager) || 3 (general group manager) || 4 (expert).
+
+course:
+  unit = 1 || 2 || 3.
+  grade = 1 (karshenasi) || 2 (arshad) || 3 (phd).
+
+professors:
+  lastGrade = 1 (karshenasi) || 2 (arshad) || 3 (phd).
+
+schedules:
+  testDay = 1 ... 15.
+  testDayPart = 1 || 2 || 3.
+  weekKindClass = 1 (sabet) || 2 (zoj) || 3 (fard).
+  weekDay = 1 ... 6.
+
+*/
+
+

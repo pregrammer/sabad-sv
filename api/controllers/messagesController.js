@@ -1,5 +1,6 @@
 const mysql = require("mysql2/promise");
 const dbConfig = require("../config/dbConfig");
+const nodemailer = require("nodemailer");
 
 const get_others_messages = async (req, res) => {
   const id = req.user.id;
@@ -174,11 +175,116 @@ const create_message = async (req, res) => {
   }
 
   try {
-    const [result1, fields1] = await connection.execute(
-      `insert into messages (title, body, to_user_id, from_user_id, created_at) values ('${title}', '${body}', ${to_user_id}, '${
-        req.user.id
-      }', '${Date()}')`
-    );
+    // to_user_id === 'sgm': send msg to all specialized group managers
+    // to_user_id === 'ggm': send msg to all general group managers
+    // to_user_id === user_id: send msg to just user_id
+
+    if (to_user_id === "sgm") {
+      const [result1, fields1] = await connection.execute(
+        `select id, email from users where role = 2`
+      );
+      let emails = [];
+      result1.forEach(async (obj) => {
+        emails.push(obj.email);
+        const [result2, fields2] = await connection.execute(
+          `insert into messages (title, body, to_user_id, from_user_id, created_at) values ('${title}', '${body}', ${
+            obj.id
+          }, '${req.user.id}', '${Date()}')`
+        );
+      });
+
+      // email to sgms
+      //const transporter = nodemailer.createTransport({
+      //  host: "mail.travercymedia.com",
+      //  port: 587,
+      //  secure: false,
+      //  auth: {
+      //    user: "test@travercymedia.com",
+      //    pass: "123abc",
+      //  },
+      //  /* tls: { // this is for localhost
+      //      rejectUnauthorized: false,
+      //    }, */
+      //});
+
+      //const mailOptions = {
+      //  from: "test@travercymedia.com",
+      //  to: emails.toString(),
+      //  subject: title,
+      //  text: `sender: ${req.user.email}` + body,
+      //};
+
+      //let info = await transporter.sendMail(mailOptions);
+    } else if (to_user_id === "ggm") {
+      const [result3, fields3] = await connection.execute(
+        `select id, email from users where role = 3`
+      );
+      let emails = [];
+      result3.forEach(async (obj) => {
+        emails.push(obj.email);
+        const [result4, fields4] = await connection.execute(
+          `insert into messages (title, body, to_user_id, from_user_id, created_at) values ('${title}', '${body}', ${
+            obj.id
+          }, '${req.user.id}', '${Date()}')`
+        );
+      });
+
+      // email to ggms
+      //const transporter = nodemailer.createTransport({
+      //  host: "mail.travercymedia.com",
+      //  port: 587,
+      //  secure: false,
+      //  auth: {
+      //    user: "test@travercymedia.com",
+      //    pass: "123abc",
+      //  },
+      //  /* tls: { // this is for localhost
+      //            rejectUnauthorized: false,
+      //          }, */
+      //});
+
+      //const mailOptions = {
+      //  from: "test@travercymedia.com",
+      //  to: emails.toString(),
+      //  subject: title,
+      //  text: `sender: ${req.user.email}` + body,
+      //};
+
+      //let info = await transporter.sendMail(mailOptions);
+    } else {
+      const [result5, fields5] = await connection.execute(
+        `select email from users where id = ${to_user_id}`
+      );
+
+      const [result6, fields6] = await connection.execute(
+        `insert into messages (title, body, to_user_id, from_user_id, created_at) values ('${title}', '${body}', ${to_user_id}, '${
+          req.user.id
+        }', '${Date()}')`
+      );
+
+      // email to user
+      //const transporter = nodemailer.createTransport({
+      //  host: "mail.travercymedia.com",
+      //  port: 587,
+      //  secure: false,
+      //  auth: {
+      //    user: "test@travercymedia.com",
+      //    pass: "123abc",
+      //  },
+      //  /* tls: { // this is for localhost
+      //            rejectUnauthorized: false,
+      //          }, */
+      //});
+
+      //const mailOptions = {
+      //  from: "test@travercymedia.com",
+      //  to: result5[0].email,
+      //  subject: title,
+      //  text: `sender: ${req.user.email}` + body,
+      //};
+
+      //let info = await transporter.sendMail(mailOptions);
+    }
 
     res.status(201).json({ message: `پیام مورد نظر با موفقیت ثبت شد` });
   } catch (error) {

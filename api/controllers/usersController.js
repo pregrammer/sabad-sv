@@ -25,10 +25,13 @@ const get_all = async (req, res) => {
     const [result1, fields1] = await connection.execute(
       "select count(*) as count from users"
     );
-    results.totallItems = result1[0].count;
+    results.totallItems = result1[0].count - 1; // we dont count admin
 
     const [result2, fields2] = await connection.execute(
-      `select users.id, email, firstName, lastName, role, field_of_study_id, name as field_of_study_name from users join field_of_studies on users.field_of_study_id=field_of_studies.id order by users.id desc limit ${limit} OFFSET ${startIndex}`
+      `select users.id, email, firstName, lastName, phoneNumber, role, field_of_study_id, name as field_of_study_name 
+      from users join field_of_studies on users.field_of_study_id=field_of_studies.id 
+      where users.id <> ${req.user.id} 
+      order by users.id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
   } catch (error) {
