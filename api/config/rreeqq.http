@@ -29,6 +29,9 @@ content-type: application/json
 http://localhost:3500/users?page=1&limit=10
 ###################
 
+http://localhost:3500/users/user
+###################
+
 POST http://localhost:3500/users
 content-type: application/json
 
@@ -47,12 +50,13 @@ content-type: application/json
 
 { 
     "id":1,
-    "email":"ali@yahoo.com1",
-    "password":"aa111",
-    "firstName":"a",
-    "lastName":"b",
-    "role":1,
-    "field_of_study_id":1
+    "email":"m_morteza_a@yahoo.com",
+    "password":"a1",
+    "firstName":"علی",
+    "lastName":"لاله",
+    "phoneNumber":"09163214895",
+    "role": 2,
+    "field_of_study_id": 42
 }
 ###################
 
@@ -69,7 +73,7 @@ content-type: application/json
 
 { 
     "email":"m_morteza_a@yahoo.com",
-    "password":"aa111"
+    "password":"3"
 }
 ###################
 

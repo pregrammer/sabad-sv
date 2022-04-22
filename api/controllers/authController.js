@@ -4,7 +4,8 @@ const dbConfig = require("../config/dbConfig");
 const bcrypt = require("bcrypt");
 
 // create json web token
-const maxAge = 60 * 60; // one hour
+//const maxAge = 30;
+const maxAge = 2 * 60 * 60; // two hour
 const createToken = (user_payload) => {
   return jwt.sign(user_payload, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: maxAge,
@@ -33,7 +34,9 @@ const login = async (req, res) => {
 
   try {
     const [result1, fields1] = await connection.execute(
-      `select users.id, email, password, firstName, lastName, phoneNumber, role, field_of_study_id, name from users join field_of_studies on users.field_of_study_id=field_of_studies.id where email='${email}'`
+      `select users.id, email, password, firstName, lastName, phoneNumber, role, field_of_study_id, name 
+      from users join field_of_studies on users.field_of_study_id=field_of_studies.id 
+      where email='${email}'`
     );
     if (result1.length !== 0) {
       const isSame = await bcrypt.compare(password, result1[0].password);
@@ -63,7 +66,6 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "ورود نامعتبر" });
     }
   } catch (error) {
-    console.log(error)
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
@@ -74,7 +76,7 @@ const login = async (req, res) => {
 
 const logout = (req, res) => {
   res.cookie("jwt", "", { maxAge: 1 });
-  return res.sendStatus(200);
+  return res.status(200).json({ message: "با موفقیت خارج شدید" });
 };
 
 module.exports = {

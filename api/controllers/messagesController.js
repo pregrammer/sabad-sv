@@ -1,6 +1,7 @@
 const mysql = require("mysql2/promise");
 const dbConfig = require("../config/dbConfig");
 const nodemailer = require("nodemailer");
+const Zaravand = require("zaravand-jallali-date");
 
 const get_others_messages = async (req, res) => {
   const id = req.user.id;
@@ -24,29 +25,40 @@ const get_others_messages = async (req, res) => {
 
   try {
     const [result1, fields1] = await connection.execute(
-      `select count(*) as count from messages where to_user_id=${id} and from_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id})`
+      `select count(*) as count from messages where to_user_id=${id} and from_user_id<>${id} 
+      and (deletedFor_user_id is null or deletedFor_user_id<>${id})`
     );
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      `select messages.id, messages.title, messages.body, messages.isSeen, messages.created_at, users.firstName, users.lastName, field_of_studies.name as field_of_study from messages join users on messages.from_user_id=users.id join field_of_studies on users.field_of_study_id=field_of_studies.id where to_user_id=${id} and from_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id}) order by messages.id desc limit ${limit} OFFSET ${startIndex}`
+      `select messages.id, messages.title, messages.body, messages.isSeen, messages.created_at, 
+      users.firstName, users.lastName, field_of_studies.name as field_of_study 
+      from messages join users on messages.from_user_id=users.id join field_of_studies on users.field_of_study_id=field_of_studies.id 
+      where to_user_id=${id} and from_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id}) 
+      order by messages.id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
 
+    await connection.beginTransaction();
+
     const [result3, fields3] = await connection.execute(
-      `update messages set isSeen=true where to_user_id=${id} and from_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id}) and id in (${result2.map(
+      `update messages set isSeen=true where to_user_id=${id} and from_user_id<>${id} 
+      and (deletedFor_user_id is null or deletedFor_user_id<>${id}) and id in (${result2.map(
         (res) => res.id
       )})`
     );
+
+    await connection.commit();
+
+    res.status(200).json(results);
   } catch (error) {
+    connection.rollback();
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
   } finally {
     connection.end();
   }
-
-  res.status(200).json(results);
 };
 
 const get_my_saved_messages = async (req, res) => {
@@ -76,7 +88,9 @@ const get_my_saved_messages = async (req, res) => {
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      `select id, title, body, created_at from messages where to_user_id=${id} and from_user_id=${id} order by id desc limit ${limit} OFFSET ${startIndex}`
+      `select id, title, body, created_at 
+      from messages where to_user_id=${id} and from_user_id=${id} 
+      order by id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
   } catch (error) {
@@ -112,12 +126,17 @@ const get_my_sent_messages = async (req, res) => {
 
   try {
     const [result1, fields1] = await connection.execute(
-      `select count(*) as count from messages where from_user_id=${id} and to_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id})`
+      `select count(*) as count from messages where from_user_id=${id} and to_user_id<>${id} 
+      and (deletedFor_user_id is null or deletedFor_user_id<>${id})`
     );
     results.totallItems = result1[0].count;
 
     const [result2, fields2] = await connection.execute(
-      `select id, title, body, isSeen, to_user_id, created_at from messages where from_user_id=${id} and to_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id}) order by id desc limit ${limit} OFFSET ${startIndex}`
+      `select messages.id, messages.title, messages.body, messages.isSeen, messages.created_at, 
+      users.firstName, users.lastName, field_of_studies.name as field_of_study 
+      from messages join users on messages.to_user_id=users.id join field_of_studies on users.field_of_study_id=field_of_studies.id 
+      where from_user_id=${id} and to_user_id<>${id} and (deletedFor_user_id is null or deletedFor_user_id<>${id}) 
+      order by id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
   } catch (error) {
@@ -145,7 +164,8 @@ const get_unseen_messages_count = async (req, res) => {
 
   try {
     const [result1, fields1] = await connection.execute(
-      `select count(*) as count from messages where to_user_id=${id} and from_user_id<>${id} and isSeen=false and (deletedFor_user_id is null or deletedFor_user_id<>${id})`
+      `select count(*) as count from messages 
+      where to_user_id=${id} and from_user_id<>${id} and isSeen=false and (deletedFor_user_id is null or deletedFor_user_id<>${id})`
     );
     res.status(200).json(result1[0]);
   } catch (error) {
@@ -158,7 +178,7 @@ const get_unseen_messages_count = async (req, res) => {
 };
 
 const create_message = async (req, res) => {
-  const { title, body, to_user_id } = req.body;
+  const { title, body, to_user_id } = req.body.data;
   if (!title || !body || !to_user_id)
     return res
       .status(400)
@@ -179,9 +199,13 @@ const create_message = async (req, res) => {
     // to_user_id === 'ggm': send msg to all general group managers
     // to_user_id === user_id: send msg to just user_id
 
+    await connection.beginTransaction();
+
+    const _date = new Zaravand();
+
     if (to_user_id === "sgm") {
       const [result1, fields1] = await connection.execute(
-        `select id, email from users where role = 2`
+        `select id, email from users where role = 2 and id <> ${req.user.id}`
       );
       let emails = [];
       result1.forEach(async (obj) => {
@@ -189,7 +213,11 @@ const create_message = async (req, res) => {
         const [result2, fields2] = await connection.execute(
           `insert into messages (title, body, to_user_id, from_user_id, created_at) values ('${title}', '${body}', ${
             obj.id
-          }, '${req.user.id}', '${Date()}')`
+          }, '${req.user.id}', '${_date.convert(
+            Date(),
+            "fa",
+            "YYYY/MM/DDTHH:MM:SS.S"
+          )}')`
         );
       });
 
@@ -217,7 +245,7 @@ const create_message = async (req, res) => {
       //let info = await transporter.sendMail(mailOptions);
     } else if (to_user_id === "ggm") {
       const [result3, fields3] = await connection.execute(
-        `select id, email from users where role = 3`
+        `select id, email from users where role = 3 and id <> ${req.user.id}`
       );
       let emails = [];
       result3.forEach(async (obj) => {
@@ -225,7 +253,11 @@ const create_message = async (req, res) => {
         const [result4, fields4] = await connection.execute(
           `insert into messages (title, body, to_user_id, from_user_id, created_at) values ('${title}', '${body}', ${
             obj.id
-          }, '${req.user.id}', '${Date()}')`
+          }, '${req.user.id}', '${_date.convert(
+            Date(),
+            "fa",
+            "YYYY/MM/DDTHH:MM:SS.S"
+          )}')`
         );
       });
 
@@ -259,7 +291,7 @@ const create_message = async (req, res) => {
       const [result6, fields6] = await connection.execute(
         `insert into messages (title, body, to_user_id, from_user_id, created_at) values ('${title}', '${body}', ${to_user_id}, '${
           req.user.id
-        }', '${Date()}')`
+        }', '${_date.convert(Date(), "fa", "YYYY/MM/DDTHH:MM:SS.S")}')`
       );
 
       // email to user
@@ -286,8 +318,11 @@ const create_message = async (req, res) => {
       //let info = await transporter.sendMail(mailOptions);
     }
 
+    await connection.commit();
+
     res.status(201).json({ message: `پیام مورد نظر با موفقیت ثبت شد` });
   } catch (error) {
+    connection.rollback();
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
@@ -296,7 +331,7 @@ const create_message = async (req, res) => {
   }
 };
 
-const update_message = async (req, res) => {
+/* const update_message = async (req, res) => {
   const { id, title, body, to_user_id } = req.body;
   if (!id || !title || !body || !to_user_id)
     return res
@@ -344,7 +379,7 @@ const update_message = async (req, res) => {
   } finally {
     connection.end();
   }
-};
+}; */
 
 const delete_message = async (req, res) => {
   // if to, from, user.id are the same or deletedFor_user_id is not null, delete it. if not fill the user.id in the deletedFor_user_id.
@@ -422,6 +457,5 @@ module.exports = {
   get_my_sent_messages,
   get_unseen_messages_count,
   create_message,
-  update_message,
   delete_message,
 };

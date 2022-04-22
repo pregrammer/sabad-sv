@@ -51,7 +51,6 @@ const isGgm = (req, res, next) => {
 
 // check user is "general group manager" or "specialized group manager" or non of them
 const isSgm_or_Ggm = (req, res, next) => {
-  const token = req.cookies.jwt;
   if (req.user.role === 2 || req.user.role === 3) {
     next();
   } else {
@@ -71,7 +70,7 @@ const isExpert = (req, res, next) => {
 // check user either is admin or once who wants to change their own informaitions not others
 // for baseUrl/users (PUT)
 const isAdmin_or_Self_updating = (req, res, next) => {
-  if (req.user.role === 1 || Number(req.body.id) === req.user.id) {
+  if (req.user.role === 1 || Number(req.body.data.id) === req.user.id) {
     next();
   } else {
     return res.status(403).json({ message: "دسترسی غیر مجاز" });
