@@ -387,6 +387,9 @@ schedules:
   weekKindClass = 1 (sabet) || 2 (zoj) || 3 (fard).
   weekDay = 1 ... 6.
 
+semester:
+  yearPart = 1 (aval) || 2 (dovom) || 3 (tabestan)
+
 */
 
 

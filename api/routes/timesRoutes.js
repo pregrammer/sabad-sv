@@ -8,7 +8,7 @@ const {
 } = require("../controllers/timesController");
 const { isAdmin } = require("../middlewares/authMiddlewares");
 
-router.get("/", isAdmin, get_all);
+router.get("/", get_all);
 router.post("/", isAdmin, create_time);
 router.put("/", isAdmin, update_time);
 router.delete("/", isAdmin, delete_time);

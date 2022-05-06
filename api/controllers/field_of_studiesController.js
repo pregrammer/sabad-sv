@@ -11,28 +11,38 @@ const get_all = async (req, res) => {
       .status(500)
       .json({ message: "خطا در برقراری ارتباط با پایگاه داده" });
   }
-  const page = parseInt(req.query.page);
-  const limit = parseInt(req.query.limit);
-  if (!page || !limit)
-    return res.status(400).json({ message: "specify page and limit" });
 
-  const startIndex = (page - 1) * limit;
-
-  const results = {};
+  const forSelect = req.query.forSelect;
 
   try {
-    const [result1, fields1] = await connection.execute(
-      "select count(*) as count from field_of_studies"
-    );
-    results.totallItems = result1[0].count;
+    if (forSelect === "true") {
+      const [result1, fields1] = await connection.execute(
+        "select * from field_of_studies order by id desc"
+      );
+      res.status(200).json(result1);
+    } else {
+      const page = parseInt(req.query.page);
+      const limit = parseInt(req.query.limit);
+      const startIndex = (page - 1) * limit;
+      const results = {};
 
-    const [result2, fields2] = await connection.execute(
-      "select * from field_of_studies order by id desc limit " +
-        limit +
-        " OFFSET " +
-        startIndex
-    );
-    results.result = result2;
+      if (!page || !limit)
+        return res.status(400).json({ message: "specify page and limit" });
+
+      const [result1, fields1] = await connection.execute(
+        "select count(*) as count from field_of_studies"
+      );
+      results.totallItems = result1[0].count;
+
+      const [result2, fields2] = await connection.execute(
+        "select * from field_of_studies order by id desc limit " +
+          limit +
+          " OFFSET " +
+          startIndex
+      );
+      results.result = result2;
+      res.status(200).json(results);
+    }
   } catch (error) {
     return res
       .status(500)
@@ -40,11 +50,10 @@ const get_all = async (req, res) => {
   } finally {
     connection.end();
   }
-  res.status(200).json(results);
 };
 
 const create_fos = async (req, res) => {
-  const { name } = req.body;
+  const { name } = req.body.data;
   if (!name) return res.status(400).json({ message: "نام رشته نیاز است" });
 
   //connect to db
@@ -60,10 +69,10 @@ const create_fos = async (req, res) => {
   try {
     // check for duplicate name in the db
     const [result1, fields1] = await connection.execute(
-      `select * from field_of_studies where name='${name}'`
+      `select count(*) as count from field_of_studies where name='${name}'`
     );
 
-    if (result1.length !== 0)
+    if (result1[0].count !== 0)
       return res.status(409).json({ message: "این نام قبلا وارد شده است" });
 
     const [result2, fields2] = await connection.execute(
@@ -81,7 +90,7 @@ const create_fos = async (req, res) => {
 };
 
 const update_fos = async (req, res) => {
-  const { name, id } = req.body;
+  const { name, id } = req.body.data;
   if (!name || !id) {
     return res.status(400).json({ message: "نام و آیدی جدید رشته نیاز است" });
   }
@@ -98,14 +107,22 @@ const update_fos = async (req, res) => {
 
   try {
     // check for existing id in the db
-    const [result1, fields1] = await connection.execute(
-      `select * from field_of_studies where id = ${id}`
+    const [result0, fields0] = await connection.execute(
+      `select count(*) as count from field_of_studies where id = ${id}`
     );
 
-    if (result1.length === 0)
+    if (result0[0].count === 0)
       return res
         .status(400)
         .json({ message: "رشته ای مطابق با آیدی ارسالی وجود ندارد" });
+
+    // check for duplicate name in the db
+    const [result1, fields1] = await connection.execute(
+      `select count(*) as count from field_of_studies where name='${name}' and id <> ${id}`
+    );
+
+    if (result1[0].count !== 0)
+      return res.status(409).json({ message: "این نام قبلا وارد شده است" });
 
     const [result2, fields2] = await connection.execute(
       `update field_of_studies set name = '${name}' where id = ${id}`
@@ -139,15 +156,15 @@ const delete_fos = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from field_of_studies where id = ${id}`
+      `select count(*) as count from field_of_studies where id = ${id}`
     );
 
-    if (result1.length === 0)
+    if (result1[0].count === 0)
       return res
         .status(400)
         .json({ message: "رشته ای مطابق با آیدی ارسالی وجود ندارد" });
 
-    const [result2, fields2] = await connection.execute(
+    const [result6, fields6] = await connection.execute(
       `delete from field_of_studies where id = ${id}`
     );
 

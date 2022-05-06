@@ -8,7 +8,7 @@ const {
 } = require("../controllers/collegesController");
 const { isAdmin } = require("../middlewares/authMiddlewares");
 
-router.get("/", isAdmin, get_all);
+router.get("/", get_all);
 router.post("/", isAdmin, create_college);
 router.put("/", isAdmin, update_college);
 router.delete("/", isAdmin, delete_college);

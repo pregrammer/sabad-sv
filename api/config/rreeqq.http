@@ -396,46 +396,23 @@ content-type: application/json
 http://localhost:3500/schedules
 content-type: application/json
 
-{ 
-    "semester_id":8
-}
 ###################
-http://localhost:3500/schedules/weekly
+http://localhost:3500/schedules/weekly?field_of_study_id=all&professor_id=all&termNumber=all&class_id=all&semester_id=64
 content-type: application/json
 
-{ 
-    "field_of_study_id":"all",
-    "professor_id":"all",
-    "termNumber":"all",
-    "class_id":"all",
-    "semester_id":8
-}
 ###################
-http://localhost:3500/schedules/test
+http://localhost:3500/schedules/test?field_of_study_id=all&professor_id=all&termNumber=all&semester_id=64
 content-type: application/json
 
-{ 
-    "field_of_study_id":"all",
-    "professor_id":"all",
-    "termNumber":"all",
-    "semester_id":32
-}
 ###################
-http://localhost:3500/schedules/schedule
+http://localhost:3500/schedules/schedule?id=9
 content-type: application/json
 
-{ 
-    "id":69
-}
 ###################
 
-http://localhost:3500/schedules/class-schedules
+http://localhost:3500/schedules/class-schedules?class_id=45
 content-type: application/json
 
-{ 
-    "class_id":10,
-    "semester_id":32
-}
 ###################
 
 POST http://localhost:3500/schedules

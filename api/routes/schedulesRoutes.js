@@ -26,7 +26,7 @@ router.post("/weekly-email", isSgm_or_Ggm, email_weekly_schedule);
 router.post("/test-email", isSgm_or_Ggm, email_test_schedule);
 
 router.put("/", isSgm_or_Ggm, update_schedule);
-router.put("/change-state", isSgm, update_schedule_state);
+router.put("/change-state", isSgm_or_Ggm, update_schedule_state);
 
 router.delete("/", isSgm, delete_schedule);
 

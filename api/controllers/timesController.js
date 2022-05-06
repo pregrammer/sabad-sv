@@ -2,6 +2,14 @@ const mysql = require("mysql2/promise");
 const dbConfig = require("../config/dbConfig");
 
 const get_all = async (req, res) => {
+  const page = parseInt(req.query.page);
+  const limit = parseInt(req.query.limit);
+  const forSelect = req.query.forSelect;
+  if ((!page || !limit) && !forSelect)
+    return res
+      .status(400)
+      .json({ message: "اطلاعات ارسالی برای دریافت زمان ها ناقص است" });
+
   //connect to db
   let connection;
   try {
@@ -11,16 +19,19 @@ const get_all = async (req, res) => {
       .status(500)
       .json({ message: "خطا در برقراری ارتباط با پایگاه داده" });
   }
-  const page = parseInt(req.query.page);
-  const limit = parseInt(req.query.limit);
-  if (!page || !limit)
-    return res.status(400).json({ message: "specify page and limit" });
 
   const startIndex = (page - 1) * limit;
 
   const results = {};
 
   try {
+    if (forSelect === "true") {
+      const [result1, fields1] = await connection.execute(
+        `select * from times`
+      );
+      return res.status(200).json(result1);
+    }
+
     const [result1, fields1] = await connection.execute(
       "select count(*) as count from times"
     );
@@ -33,6 +44,7 @@ const get_all = async (req, res) => {
         startIndex
     );
     results.result = result2;
+    res.status(200).json(results);
   } catch (error) {
     return res
       .status(500)
@@ -40,11 +52,10 @@ const get_all = async (req, res) => {
   } finally {
     connection.end();
   }
-  res.status(200).json(results);
 };
 
 const create_time = async (req, res) => {
-  const { start, end } = req.body;
+  const { start, end } = req.body.data;
   if (!start || !end)
     return res.status(400).json({ message: "مشخصات برای ثبت زمان ناقص است" });
 
@@ -61,10 +72,10 @@ const create_time = async (req, res) => {
   try {
     // check for duplicate start and end time in the db
     const [result1, fields1] = await connection.execute(
-      `select * from times where start = ${start} and end = ${end}`
+      `select count(*) as count from times where start = ${start} and end = ${end}`
     );
 
-    if (result1.length !== 0)
+    if (result1[0].count !== 0)
       return res.status(409).json({ message: "این زمان قبلا وارد شده است" });
 
     const [result2, fields2] = await connection.execute(
@@ -82,7 +93,7 @@ const create_time = async (req, res) => {
 };
 
 const update_time = async (req, res) => {
-  const { id, start, end } = req.body;
+  const { id, start, end } = req.body.data;
   if (!id || !start || !end)
     return res
       .status(400)
@@ -100,14 +111,22 @@ const update_time = async (req, res) => {
 
   try {
     // check for existing id in the db
-    const [result1, fields1] = await connection.execute(
-      `select * from times where id = ${id}`
+    const [result0, fields0] = await connection.execute(
+      `select count(*) as count from times where id = ${id}`
     );
 
-    if (result1.length === 0)
+    if (result0[0].count === 0)
       return res
         .status(400)
         .json({ message: "زمانی مطابق با آیدی ارسالی وجود ندارد" });
+
+    // check for duplicate start and end time in the db
+    const [result1, fields1] = await connection.execute(
+      `select count(*) as count from times where start = ${start} and end = ${end} and id <> ${id}`
+    );
+
+    if (result1[0].count !== 0)
+      return res.status(409).json({ message: "این زمان قبلا وارد شده است" });
 
     const [result2, fields2] = await connection.execute(
       `update times set start = ${start}, end = ${end} where id = ${id}`
@@ -141,10 +160,10 @@ const delete_time = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from times where id = ${id}`
+      `select count(*) as count from times where id = ${id}`
     );
 
-    if (result1.length === 0)
+    if (result1[0].count === 0)
       return res
         .status(400)
         .json({ message: "زمانی مطابق با آیدی ارسالی وجود ندارد" });

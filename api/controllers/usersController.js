@@ -34,6 +34,7 @@ const get_all = async (req, res) => {
       order by users.id desc limit ${limit} OFFSET ${startIndex}`
     );
     results.result = result2;
+    res.status(200).json(results);
   } catch (error) {
     return res
       .status(500)
@@ -41,8 +42,6 @@ const get_all = async (req, res) => {
   } finally {
     connection.end();
   }
-
-  res.status(200).json(results);
 };
 
 const get_all_for_select = async (req, res) => {
@@ -114,13 +113,21 @@ const get_user = async (req, res) => {
 };
 
 const create_user = async (req, res) => {
-  const { email, password, firstName, lastName, role, field_of_study_id } =
-    req.body;
+  const {
+    email,
+    password,
+    firstName,
+    lastName,
+    phoneNumber,
+    role,
+    field_of_study_id,
+  } = req.body.data;
   if (
     !email ||
     !password ||
     !firstName ||
     !lastName ||
+    !phoneNumber ||
     !role ||
     !field_of_study_id
   )
@@ -141,10 +148,10 @@ const create_user = async (req, res) => {
   try {
     // check for duplicate email in the db
     const [result1, fields1] = await connection.execute(
-      `select * from users where email='${email}'`
+      `select count(*) as count from users where email='${email}'`
     );
 
-    if (result1.length !== 0)
+    if (result1[0].count !== 0)
       return res
         .status(409)
         .json({ message: "این ایمیل قبلا برای کاربر دیگری وارد شده است" });
@@ -153,7 +160,8 @@ const create_user = async (req, res) => {
     const hashedPwd = await bcrypt.hash(password, 10);
 
     const [result2, fields2] = await connection.execute(
-      `insert into users (email, password, firstName, lastName, role, field_of_study_id) values ('${email}', '${hashedPwd}', '${firstName}', '${lastName}', ${role}, ${field_of_study_id})`
+      `insert into users (email, password, firstName, lastName, phoneNumber, role, field_of_study_id) 
+      values ('${email}', '${hashedPwd}', '${firstName}', '${lastName}', '${phoneNumber}', ${role}, ${field_of_study_id})`
     );
 
     res.status(201).json({ message: `کاربر مورد نظر با موفقیت ثبت شد` });
@@ -194,14 +202,24 @@ const update_user = async (req, res) => {
 
   try {
     // check for existing id in the db
-    const [result1, fields1] = await connection.execute(
+    const [result0, fields0] = await connection.execute(
       `select count(*) as count from users where id = ${id}`
     );
 
-    if (result1[0].count === 0)
+    if (result0[0].count === 0)
       return res
         .status(400)
         .json({ message: "کاربری مطابق با آیدی ارسالی وجود ندارد" });
+
+    // check for duplicate email in the db
+    const [result1, fields1] = await connection.execute(
+      `select count(*) as count from users where email='${email}' and id <> ${id}`
+    );
+
+    if (result1[0].count !== 0)
+      return res
+        .status(409)
+        .json({ message: "این ایمیل قبلا برای کاربر دیگری وارد شده است" });
 
     //encrypt the password
     let hashedPwd;
@@ -249,10 +267,10 @@ const delete_user = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from users where id = ${id}`
+      `select count(*) as count from users where id = ${id}`
     );
 
-    if (result1.length === 0)
+    if (result1[0].count === 0)
       return res
         .status(400)
         .json({ message: "کاربری مطابق با آیدی ارسالی وجود ندارد" });

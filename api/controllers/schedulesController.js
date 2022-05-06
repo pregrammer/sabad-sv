@@ -3,11 +3,12 @@ const dbConfig = require("../config/dbConfig");
 const nodemailer = require("nodemailer");
 
 const get_all = async (req, res) => {
-  const { semester_id } = req.body;
-  if (!semester_id)
-    return res.status(400).json({
-      message: "اطلاعات ارسالی برای گرفتن برنامه های درسی ناقص است",
-    });
+  const page = parseInt(req.query.page);
+  const limit = parseInt(req.query.limit);
+  if (!page || !limit)
+    return res
+      .status(400)
+      .json({ message: "اطلاعات ارسالی برای ذریافت برنامه ها ناقص است" });
 
   //connect to db
   let connection;
@@ -18,131 +19,64 @@ const get_all = async (req, res) => {
       .status(500)
       .json({ message: "خطا در برقراری ارتباط با پایگاه داده" });
   }
+  const startIndex = (page - 1) * limit;
+  const results = {};
+
   const { id, role, field_of_study_id } = req.user;
   // role === 2 ? schedules.field_of_study_id = field_of_study_id
   // role === 3 ? schedules.accessibleFor_user_id = id
 
-  // the difference of these 4 queries is on where clause for class2_id and host_fos to have null value or not.
-  const query1 = `select schedules.id, testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, 
-    weekKindClass2, weekDay1, weekDay2, isCertain, 
-    schedules.semester_id, semesters.yearPart, schedules.course_id, courses1.name as course_name, 
-    courses2.id as prerequisite_id, courses2.name as prerequisite_name, courses3.id as need_id, courses3.name as need_name, 
-    schedules.professor_id, professors.firstName as professor_firstName, professors.lastName as professor_lastName, 
-    fos1.id as fos_id, fos1.name as fos_name, fos2.id as host_fos_id, fos2.name as host_fos_name, 
-    users1.id as submitter_id, users1.firstName as submitter_firstName, users1.lastName as submitter_lastName, 
-    users2.id as accessibleFor_id, users2.firstName as accessibleFor_firstName, users2.lastName as accessibleFor_lastName, 
-    classes1.id as class1_id, classes1.title as class1_title, classes2.id as class2_id, classes2.title as class2_title, 
-    times1.id as time1_id, times1.start as time1_start, times1.end as time1_end, 
-    times2.id as time2_id, times2.start as time2_start, times2.end as time2_end 
-    from schedules join semesters on schedules.semester_id=semesters.id 
-    join courses courses1 on schedules.course_id=courses1.id 
-    join courses courses2 on courses1.prerequisite_id=courses2.id 
-    join courses courses3 on courses1.need_id=courses3.id 
-    join professors on schedules.professor_id=professors.id 
-    join field_of_studies fos1 on schedules.field_of_study_id=fos1.id 
-    join field_of_studies fos2 on schedules.host_field_of_study_id=fos2.id
-    join users users1 on schedules.submitter_user_id=users1.id 
-    join users users2 on schedules.accessibleFor_user_id=users2.id 
-    join classes classes1 on schedules.class1_id=classes1.id 
-    join classes classes2 on schedules.class2_id=classes2.id 
-    join times times1 on schedules.time1_id=times1.id 
-    join times times2 on schedules.time2_id=times2.id 
-    where schedules.semester_id = ${semester_id} and class2_id is not null and host_field_of_study_id is not null 
-    and ${
-      role === 2
-        ? `schedules.field_of_study_id = ${field_of_study_id}`
-        : `schedules.accessibleFor_user_id = ${id}`
-    }`;
-
-  const query2 = `select schedules.id, testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, 
-    weekDay1, isCertain, schedules.semester_id, semesters.yearPart, schedules.course_id, courses1.name as course_name, 
-    courses2.id as prerequisite_id, courses2.name as prerequisite_name, courses3.id as need_id, courses3.name as need_name, 
-    schedules.professor_id, professors.firstName as professor_firstName, professors.lastName as professor_lastName, 
-    fos1.id as fos_id, fos1.name as fos_name, fos2.id as host_fos_id, fos2.name as host_fos_name, 
-    users1.id as submitter_id, users1.firstName as submitter_firstName, users1.lastName as submitter_lastName, 
-    users2.id as accessibleFor_id, users2.firstName as accessibleFor_firstName, users2.lastName as accessibleFor_lastName, 
-    classes1.id as class1_id, classes1.title as class1_title, 
-    times1.id as time1_id, times1.start as time1_start, times1.end as time1_end 
-    from schedules join semesters on schedules.semester_id=semesters.id 
-    join courses courses1 on schedules.course_id=courses1.id 
-    join courses courses2 on courses1.prerequisite_id=courses2.id 
-    join courses courses3 on courses1.need_id=courses3.id 
-    join professors on schedules.professor_id=professors.id 
-    join field_of_studies fos1 on schedules.field_of_study_id=fos1.id 
-    join field_of_studies fos2 on schedules.host_field_of_study_id=fos2.id
-    join users users1 on schedules.submitter_user_id=users1.id 
-    join users users2 on schedules.accessibleFor_user_id=users2.id 
-    join classes classes1 on schedules.class1_id=classes1.id 
-    join times times1 on schedules.time1_id=times1.id 
-    where schedules.semester_id = ${semester_id} and class2_id is null and host_field_of_study_id is not null 
-    and ${
-      role === 2
-        ? `schedules.field_of_study_id = ${field_of_study_id}`
-        : `schedules.accessibleFor_user_id = ${id}`
-    }`;
-
-  const query3 = `select schedules.id, testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, 
-    weekKindClass2, weekDay1, weekDay2, isCertain, 
-    schedules.semester_id, semesters.yearPart, schedules.course_id, courses1.name as course_name, 
-    courses2.id as prerequisite_id, courses2.name as prerequisite_name, courses3.id as need_id, courses3.name as need_name, 
-    schedules.professor_id, professors.firstName as professor_firstName, professors.lastName as professor_lastName, 
-    fos1.id as fos_id, fos1.name as fos_name, 
-    users1.id as submitter_id, users1.firstName as submitter_firstName, users1.lastName as submitter_lastName, 
-    users2.id as accessibleFor_id, users2.firstName as accessibleFor_firstName, users2.lastName as accessibleFor_lastName, 
-    classes1.id as class1_id, classes1.title as class1_title, classes2.id as class2_id, classes2.title as class2_title, 
-    times1.id as time1_id, times1.start as time1_start, times1.end as time1_end, 
-    times2.id as time2_id, times2.start as time2_start, times2.end as time2_end 
-    from schedules join semesters on schedules.semester_id=semesters.id 
-    join courses courses1 on schedules.course_id=courses1.id 
-    join courses courses2 on courses1.prerequisite_id=courses2.id 
-    join courses courses3 on courses1.need_id=courses3.id 
-    join professors on schedules.professor_id=professors.id 
-    join field_of_studies fos1 on schedules.field_of_study_id=fos1.id 
-    join users users1 on schedules.submitter_user_id=users1.id 
-    join users users2 on schedules.accessibleFor_user_id=users2.id 
-    join classes classes1 on schedules.class1_id=classes1.id 
-    join classes classes2 on schedules.class2_id=classes2.id 
-    join times times1 on schedules.time1_id=times1.id 
-    join times times2 on schedules.time2_id=times2.id 
-    where schedules.semester_id = ${semester_id} and class2_id is not null and host_field_of_study_id is null 
-    and ${
-      role === 2
-        ? `schedules.field_of_study_id = ${field_of_study_id}`
-        : `schedules.accessibleFor_user_id = ${id}`
-    }`;
-
-  const query4 = `select schedules.id, testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, 
-    weekDay1, isCertain, schedules.semester_id, semesters.yearPart, schedules.course_id, courses1.name as course_name, 
-    courses2.id as prerequisite_id, courses2.name as prerequisite_name, courses3.id as need_id, courses3.name as need_name, 
-    schedules.professor_id, professors.firstName as professor_firstName, professors.lastName as professor_lastName, 
-    fos1.id as fos_id, fos1.name as fos_name, 
-    users1.id as submitter_id, users1.firstName as submitter_firstName, users1.lastName as submitter_lastName, 
-    users2.id as accessibleFor_id, users2.firstName as accessibleFor_firstName, users2.lastName as accessibleFor_lastName, 
-    classes1.id as class1_id, classes1.title as class1_title, 
-    times1.id as time1_id, times1.start as time1_start, times1.end as time1_end 
-    from schedules join semesters on schedules.semester_id=semesters.id 
-    join courses courses1 on schedules.course_id=courses1.id 
-    join courses courses2 on courses1.prerequisite_id=courses2.id 
-    join courses courses3 on courses1.need_id=courses3.id 
-    join professors on schedules.professor_id=professors.id 
-    join field_of_studies fos1 on schedules.field_of_study_id=fos1.id 
-    join users users1 on schedules.submitter_user_id=users1.id 
-    join users users2 on schedules.accessibleFor_user_id=users2.id 
-    join classes classes1 on schedules.class1_id=classes1.id 
-    join times times1 on schedules.time1_id=times1.id 
-    where schedules.semester_id = ${semester_id} and class2_id is null and host_field_of_study_id is null 
-    and ${
-      role === 2
-        ? `schedules.field_of_study_id = ${field_of_study_id}`
-        : `schedules.accessibleFor_user_id = ${id}`
-    }`;
-
   try {
-    const [result1, fields1] = await connection.execute(query1);
-    const [result2, fields2] = await connection.execute(query2);
-    const [result3, fields3] = await connection.execute(query3);
-    const [result4, fields4] = await connection.execute(query4);
-    res.status(200).json([...result1, ...result2, ...result3, ...result4]);
+    const [result1, fields1] = await connection.execute(
+      `SELECT id FROM semesters ORDER BY ID DESC LIMIT 1`
+    );
+    const [result2, fields2] = await connection.execute(
+      `select count(*) as count from schedules where schedules.semester_id = ${
+        result1[0].id
+      } 
+      and ${
+        role === 2
+          ? `schedules.field_of_study_id = ${field_of_study_id}`
+          : `schedules.accessibleFor_user_id = ${id}`
+      }`
+    );
+    results.totallItems = result2[0].count;
+
+    const query = `select schedules.id, testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, 
+    weekKindClass2, weekDay1, weekDay2, isCertain, 
+    semesters.yearPart, schedules.course_id, courses1.name as course_name, courses1.code as course_code, 
+    courses2.id as prerequisite_id, courses2.name as prerequisite_name, courses3.id as need_id, courses3.name as need_name, 
+    schedules.professor_id, professors.firstName as professor_firstName, professors.lastName as professor_lastName, 
+    fos1.id as fos_id, fos1.name as fos_name, fos2.id as host_fos_id, fos2.name as host_fos_name, 
+    users1.id as submitter_id, users1.firstName as submitter_firstName, users1.lastName as submitter_lastName, 
+    users2.id as accessibleFor_id, users2.firstName as accessibleFor_firstName, users2.lastName as accessibleFor_lastName, 
+    classes1.id as class1_id, classes1.title as class1_title, classes2.id as class2_id, classes2.title as class2_title, 
+    times1.id as time1_id, times1.start as time1_start, times1.end as time1_end, 
+    times2.id as time2_id, times2.start as time2_start, times2.end as time2_end 
+    from schedules left join semesters on schedules.semester_id=semesters.id 
+    left join courses courses1 on schedules.course_id=courses1.id 
+    left join courses courses2 on courses1.prerequisite_id=courses2.id 
+    left join courses courses3 on courses1.need_id=courses3.id 
+    left join professors on schedules.professor_id=professors.id 
+    left join field_of_studies fos1 on schedules.field_of_study_id=fos1.id 
+    left join field_of_studies fos2 on schedules.host_field_of_study_id=fos2.id
+    left join users users1 on schedules.submitter_user_id=users1.id 
+    left join users users2 on schedules.accessibleFor_user_id=users2.id 
+    left join classes classes1 on schedules.class1_id=classes1.id 
+    left join classes classes2 on schedules.class2_id=classes2.id 
+    left join times times1 on schedules.time1_id=times1.id 
+    left join times times2 on schedules.time2_id=times2.id 
+    where schedules.semester_id = ${result1[0].id} 
+    and ${
+      role === 2
+        ? `schedules.field_of_study_id = ${field_of_study_id}`
+        : `schedules.accessibleFor_user_id = ${id}`
+    } order by schedules.id desc limit ${limit} OFFSET ${startIndex}`;
+
+    const [result3, fields3] = await connection.execute(query);
+    results.result = result3;
+
+    res.status(200).json(results);
   } catch (error) {
     return res
       .status(500)
@@ -153,23 +87,27 @@ const get_all = async (req, res) => {
 };
 
 const get_weekly_schedules_by_filter = async (req, res) => {
-  const { field_of_study_id, professor_id, termNumber, class_id, semester_id } =
-    req.body;
-  if (
-    !field_of_study_id ||
-    !professor_id ||
-    !termNumber ||
-    !class_id ||
-    !semester_id
-  )
+  const fff = req.query.field_of_study_id;
+  const professor_id = req.query.professor_id;
+  const termNumber = req.query.termNumber;
+  const class_id = req.query.class_id;
+  const semester_id = req.query.semester_id;
+  if (!fff || !professor_id || !termNumber || !class_id || !semester_id)
     return res.status(400).json({
       message: "اطلاعات ارسالی برای فیلتر کردن برنامه ی هفتگی ناقص است",
     });
 
+  // when user refresh the page, AuthContext removed and auth.fos_id equal to undefined.
+  const field_of_study_id =
+    fff !== "undefined" ? fff : req.user.field_of_study_id;
+
   //connect to db
   let connection;
   try {
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection({
+      ...dbConfig,
+      multipleStatements: true,
+    });
   } catch (error) {
     return res
       .status(500)
@@ -211,89 +149,88 @@ const get_weekly_schedules_by_filter = async (req, res) => {
   }
 
   try {
-    const [result1, fields1] = await connection.execute(
+    const [result0, fields0] = await connection.execute(
+      `select count(*) as count from semesters where id = ${semester_id}`
+    );
+    if (result0[0].count === 0)
+      return res.status(400).json({ message: "درخواست نامعتبر" });
+
+    const [results, fields] = await connection.query(
       `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=1 and schedules.semester_id = ${semester_id}${where_clause}`
-    );
-    const [result2, fields2] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=1 and schedules.semester_id = ${semester_id}${where_clause};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay2=1 and schedules.semester_id = ${semester_id}${where_clause2}`
-    );
-    const saturday = [...result1, ...result2];
-
-    const [result3, fields3] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay2=1 and schedules.semester_id = ${semester_id}${where_clause2};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=2 and schedules.semester_id = ${semester_id}${where_clause}`
-    );
-    const [result4, fields4] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=2 and schedules.semester_id = ${semester_id}${where_clause};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay2=2 and schedules.semester_id = ${semester_id}${where_clause2}`
-    );
-    const sunday = [...result3, ...result4];
-
-    const [result5, fields5] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay2=2 and schedules.semester_id = ${semester_id}${where_clause2};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=3 and schedules.semester_id = ${semester_id}${where_clause}`
-    );
-    const [result6, fields6] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=3 and schedules.semester_id = ${semester_id}${where_clause};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay2=3 and schedules.semester_id = ${semester_id}${where_clause2}`
-    );
-    const monday = [...result5, ...result6];
-
-    const [result7, fields7] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay2=3 and schedules.semester_id = ${semester_id}${where_clause2};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=4 and schedules.semester_id = ${semester_id}${where_clause}`
-    );
-    const [result8, fields8] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=4 and schedules.semester_id = ${semester_id}${where_clause};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay2=4 and schedules.semester_id = ${semester_id}${where_clause2}`
-    );
-    const tuesday = [...result7, ...result8];
-
-    const [result9, fields9] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay2=4 and schedules.semester_id = ${semester_id}${where_clause2};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=5 and schedules.semester_id = ${semester_id}${where_clause}`
-    );
-    const [result10, fields10] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=5 and schedules.semester_id = ${semester_id}${where_clause};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay2=5 and schedules.semester_id = ${semester_id}${where_clause2}`
-    );
-    const wednesday = [...result9, ...result10];
-
-    const [result11, fields11] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay2=5 and schedules.semester_id = ${semester_id}${where_clause2};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=6 and schedules.semester_id = ${semester_id}${where_clause}`
-    );
-    const [result12, fields12] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=6 and schedules.semester_id = ${semester_id}${where_clause};
+      select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
       times.end, courses.unit, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
       where weekDay2=6 and schedules.semester_id = ${semester_id}${where_clause2}`
     );
-    const thursday = [...result11, ...result12];
+
+    /*     const saturday = [...results[0], ...results[1]];
+    const sunday = [...results[2], ...results[3]];
+    const monday = [...results[4], ...results[5]];
+    const tuesday = [...results[6], ...results[7]];
+    const wednesday = [...results[8], ...results[9]];
+    const thursday = [...results[10], ...results[11]]; */
+
+    const saturday = [...results[0], ...results[1]].sort(
+      (a, b) => a.start - b.start
+    );
+    const sunday = [...results[2], ...results[3]].sort(
+      (a, b) => a.start - b.start
+    );
+    const monday = [...results[4], ...results[5]].sort(
+      (a, b) => a.start - b.start
+    );
+    const tuesday = [...results[6], ...results[7]].sort(
+      (a, b) => a.start - b.start
+    );
+    const wednesday = [...results[8], ...results[9]].sort(
+      (a, b) => a.start - b.start
+    );
+    const thursday = [...results[10], ...results[11]].sort(
+      (a, b) => a.start - b.start
+    );
 
     const schedule = {
       saturday,
@@ -315,11 +252,18 @@ const get_weekly_schedules_by_filter = async (req, res) => {
 };
 
 const get_test_schedules_by_filter = async (req, res) => {
-  const { field_of_study_id, professor_id, termNumber, semester_id } = req.body;
-  if (!field_of_study_id || !professor_id || !termNumber || !semester_id)
+  const fff = req.query.field_of_study_id;
+  const professor_id = req.query.professor_id;
+  const termNumber = req.query.termNumber;
+  const semester_id = req.query.semester_id;
+  if (!fff || !professor_id || !termNumber || !semester_id)
     return res.status(400).json({
       message: "اطلاعات ارسالی برای فیلتر کردن برنامه ی امتحانی ناقص است",
     });
+
+  // when user refresh the page, AuthContext removed and auth.fos_id equal to undefined.
+  const field_of_study_id =
+    fff !== "undefined" ? fff : req.user.field_of_study_id;
 
   //connect to db
   let connection;
@@ -374,6 +318,12 @@ const get_test_schedules_by_filter = async (req, res) => {
   // we want to fetch just the main one (that has null host_fos).
 
   try {
+    const [result0, fields0] = await connection.execute(
+      `select count(*) as count from semesters where id = ${semester_id}`
+    );
+    if (result0[0].count === 0)
+      return res.status(400).json({ message: "درخواست نامعتبر" });
+
     const [result1, fields1] = await connection.execute(
       `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, 
       testDay, testDayPart 
@@ -479,7 +429,7 @@ const get_test_schedules_by_filter = async (req, res) => {
 };
 
 const get_schedule = async (req, res) => {
-  const id = req.body.id;
+  const id = parseInt(req.query.id);
 
   if (!id) return res.status(400).json({ message: "آیدی برنامه نیاز است" });
 
@@ -496,7 +446,7 @@ const get_schedule = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from schedules where id = ${id}`
+      `select testDay, semester_id from schedules where id = ${id}`
     );
 
     if (result1.length === 0)
@@ -504,74 +454,104 @@ const get_schedule = async (req, res) => {
         .status(400)
         .json({ message: "برنامه ای مطابق با آیدی ارسالی وجود ندارد" });
 
-    const [result3, fields3] = await connection.execute(
-      `select class2_id, host_field_of_study_id from schedules where id = ${id}`
+    const [result2, fields2] = await connection.execute(
+      `select * from test_dates where id = ${result1[0].semester_id}`
     );
-    let query = "";
-    if (result3[0].class2_id) {
-      query =
-        "select schedules.id, testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, weekKindClass2, weekDay1, weekDay2, isCertain, " +
-        "schedules.semester_id, semesters.yearPart, schedules.course_id, courses1.name as course_name, courses2.id as prerequisite_id, courses2.name as prerequisite_name, courses3.id as need_id, courses3.name as need_name, " +
-        "schedules.professor_id, professors.firstName as professor_firstName, professors.lastName as professor_lastName, " +
-        `fos1.id as fos_id, fos1.name as fos_name${
-          result3[0].host_field_of_study_id
-            ? ", fos2.id as host_fos_id, fos2.name as host_fos_name"
-            : ""
-        }, users1.id as submitter_id, users1.firstName as submitter_firstName, users1.lastName as submitter_lastName, ` +
-        "users2.id as accessibleFor_id, users2.firstName as accessibleFor_firstName, users2.lastName as accessibleFor_lastName, " +
-        "classes1.id as class1_id, classes1.title as class1_title, classes2.id as class2_id, classes2.title as class2_title, " +
-        "times1.id as time1_id, times1.start as time1_start, times1.end as time1_end, times2.id as time2_id, times2.start as time2_start, times2.end as time2_end " +
-        "from schedules join semesters on schedules.semester_id=semesters.id " +
-        "join courses courses1 on schedules.course_id=courses1.id " +
-        "join courses courses2 on courses1.prerequisite_id=courses2.id " +
-        "join courses courses3 on courses1.need_id=courses3.id " +
-        "join professors on schedules.professor_id=professors.id " +
-        `join field_of_studies fos1 on schedules.field_of_study_id=fos1.id ${
-          result3[0].host_field_of_study_id
-            ? "join field_of_studies fos2 on schedules.host_field_of_study_id=fos2.id "
-            : ""
-        }` +
-        "join users users1 on schedules.submitter_user_id=users1.id " +
-        "join users users2 on schedules.accessibleFor_user_id=users2.id " +
-        "join classes classes1 on schedules.class1_id=classes1.id " +
-        "join classes classes2 on schedules.class2_id=classes2.id " +
-        "join times times1 on schedules.time1_id=times1.id " +
-        "join times times2 on schedules.time2_id=times2.id " +
-        `where schedules.id=${id}`;
-    } else {
-      query =
-        "select schedules.id, testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, weekDay1, isCertain, " +
-        "schedules.semester_id, semesters.yearPart, schedules.course_id, courses1.name as course_name, courses2.id as prerequisite_id, courses2.name as prerequisite_name, courses3.id as need_id, courses3.name as need_name, " +
-        "schedules.professor_id, professors.firstName as professor_firstName, professors.lastName as professor_lastName, " +
-        `fos1.id as fos_id, fos1.name as fos_name${
-          result3[0].host_field_of_study_id
-            ? ", fos2.id as host_fos_id, fos2.name as host_fos_name"
-            : ""
-        }, users1.id as submitter_id, users1.firstName as submitter_firstName, users1.lastName as submitter_lastName, ` +
-        "users2.id as accessibleFor_id, users2.firstName as accessibleFor_firstName, users2.lastName as accessibleFor_lastName, " +
-        "classes1.id as class1_id, classes1.title as class1_title, " +
-        "times1.id as time1_id, times1.start as time1_start, times1.end as time1_end " +
-        "from schedules join semesters on schedules.semester_id=semesters.id " +
-        "join courses courses1 on schedules.course_id=courses1.id " +
-        "join courses courses2 on courses1.prerequisite_id=courses2.id " +
-        "join courses courses3 on courses1.need_id=courses3.id " +
-        "join professors on schedules.professor_id=professors.id " +
-        `join field_of_studies fos1 on schedules.field_of_study_id=fos1.id ${
-          result3[0].host_field_of_study_id
-            ? "join field_of_studies fos2 on schedules.host_field_of_study_id=fos2.id "
-            : ""
-        }` +
-        "join users users1 on schedules.submitter_user_id=users1.id " +
-        "join users users2 on schedules.accessibleFor_user_id=users2.id " +
-        "join classes classes1 on schedules.class1_id=classes1.id " +
-        "join times times1 on schedules.time1_id=times1.id " +
-        `where schedules.id=${id}`;
+    let test = {};
+    switch (result1[0].testDay) {
+      case 1:
+        test.testDayName = "اول";
+        test.test_dates = JSON.parse(result2[0].first);
+        break;
+      case 2:
+        test.testDayName = "دوم";
+        test.test_dates = JSON.parse(result2[0].second);
+        break;
+      case 3:
+        test.testDayName = "سوم";
+        test.test_dates = JSON.parse(result2[0].third);
+        break;
+      case 4:
+        test.testDayName = "چهارم";
+        test.test_dates = JSON.parse(result2[0].fourth);
+        break;
+      case 5:
+        test.testDayName = "پنجم";
+        test.test_dates = JSON.parse(result2[0].fifth);
+        break;
+      case 6:
+        test.testDayName = "ششم";
+        test.test_dates = JSON.parse(result2[0].sixth);
+        break;
+      case 7:
+        test.testDayName = "هفتم";
+        test.test_dates = JSON.parse(result2[0].seventh);
+        break;
+      case 8:
+        test.testDayName = "هشتم";
+        test.test_dates = JSON.parse(result2[0].eighth);
+        break;
+      case 9:
+        test.testDayName = "نهم";
+        test.test_dates = JSON.parse(result2[0].ninth);
+        break;
+      case 10:
+        test.testDayName = "دهم";
+        test.test_dates = JSON.parse(result2[0].tenth);
+        break;
+      case 11:
+        test.testDayName = "یازدهم";
+        test.test_dates = JSON.parse(result2[0].eleventh);
+        break;
+      case 12:
+        test.testDayName = "دوازدهم";
+        test.test_dates = JSON.parse(result2[0].twelfth);
+        break;
+      case 13:
+        test.testDayName = "سیزدهم";
+        test.test_dates = JSON.parse(result2[0].thirteenth);
+        break;
+      case 14:
+        test.testDayName = "چهاردهم";
+        test.test_dates = JSON.parse(result2[0].fourteenth);
+        break;
+      case 15:
+        test.testDayName = "ندارد";
+        break;
+      default:
+        break;
     }
 
-    const [result2, fields2] = await connection.execute(query);
+    const query = `select schedules.id, testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, 
+      weekKindClass2, weekDay1, weekDay2, isCertain, schedules.semester_id, semesters.yearPart, 
+      schedules.course_id, courses1.name as course_name, courses1.code as course_code, courses2.id as prerequisite_id, courses2.name as prerequisite_name, 
+      courses3.id as need_id, courses3.name as need_name, schedules.professor_id, professors.firstName as professor_firstName, 
+      professors.lastName as professor_lastName, fos1.id as fos_id, fos1.name as fos_name, 
+      fos2.id as host_fos_id, fos2.name as host_fos_name, users1.id as submitter_id, users1.firstName as submitter_firstName, 
+      users1.lastName as submitter_lastName, users2.id as accessibleFor_id, users2.firstName as accessibleFor_firstName, 
+      users2.lastName as accessibleFor_lastName, classes1.id as class1_id, classes1.title as class1_title, 
+      classes2.id as class2_id, classes2.title as class2_title, times1.id as time1_id, times1.start as time1_start, 
+      times1.end as time1_end, times2.id as time2_id, times2.start as time2_start, times2.end as time2_end 
+      from schedules left join semesters on schedules.semester_id=semesters.id 
+      left join courses courses1 on schedules.course_id=courses1.id 
+      left join courses courses2 on courses1.prerequisite_id=courses2.id 
+      left join courses courses3 on courses1.need_id=courses3.id 
+      left join professors on schedules.professor_id=professors.id 
+      left join field_of_studies fos1 on schedules.field_of_study_id=fos1.id 
+      left join field_of_studies fos2 on schedules.host_field_of_study_id=fos2.id 
+      left join users users1 on schedules.submitter_user_id=users1.id 
+      left join users users2 on schedules.accessibleFor_user_id=users2.id 
+      left join classes classes1 on schedules.class1_id=classes1.id 
+      left join classes classes2 on schedules.class2_id=classes2.id 
+      left join times times1 on schedules.time1_id=times1.id 
+      left join times times2 on schedules.time2_id=times2.id 
+      where schedules.id=${id}`;
 
-    res.status(200).json(result2[0]);
+    const [result3, fields3] = await connection.execute(query);
+
+    res.status(200).json({ ...result3[0], ...test });
   } catch (error) {
+    console.log(error);
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
@@ -591,7 +571,6 @@ const create_schedule = async (req, res) => {
     weekKindClass2,
     weekDay1,
     weekDay2,
-    semester_id,
     course_id,
     professor_id,
     host_field_of_study_id,
@@ -600,7 +579,7 @@ const create_schedule = async (req, res) => {
     accessibleFor_user_id,
     time1_id,
     time2_id,
-  } = req.body;
+  } = req.body.data;
   if (
     !testDay ||
     !testDayPart ||
@@ -611,7 +590,6 @@ const create_schedule = async (req, res) => {
     !weekKindClass2 ||
     !weekDay1 ||
     !weekDay2 ||
-    !semester_id ||
     !course_id ||
     !professor_id ||
     !host_field_of_study_id ||
@@ -636,13 +614,19 @@ const create_schedule = async (req, res) => {
   }
 
   try {
+    // fetch last semester_id
+    const [result00, fields00] = await connection.execute(
+      `SELECT id FROM semesters ORDER BY ID DESC LIMIT 1`
+    );
+    const semester_id = result00[0].id;
+
     // if we have host_fos, it means that input_schedule is the same as one of db_schedule, but with different host_fos.
 
     // if user wants to use host_fos, check that do we have this input_schedule in the db;
     // if we have, the db_data is the same as input_data but host_fos = null.
     if (host_field_of_study_id !== -1) {
       const [result0, fields0] = await connection.execute(
-        `select * from schedules 
+        `select count(*) as count from schedules 
       where testDay = ${testDay} and testDayPart = ${testDayPart} and maxCapacity = ${maxCapacity} 
       and minCapacity = ${minCapacity} and courseGroup = ${courseGroup} and weekKindClass1 = ${weekKindClass1} 
       and ${
@@ -656,12 +640,16 @@ const create_schedule = async (req, res) => {
       and class2_id = ${
         class2_id !== -1 ? `class2_id = ${class2_id}` : "class2_id is null"
       } 
-      and accessibleFor_user_id = ${accessibleFor_user_id} and time1_id = ${time1_id} 
+      and ${
+        accessibleFor_user_id === -1
+          ? "accessibleFor_user_id is null"
+          : `accessibleFor_user_id = ${accessibleFor_user_id}`
+      } and time1_id = ${time1_id} 
       and time2_id = ${
         class2_id !== -1 ? `time2_id = ${time2_id}` : "time2_id is null"
       }`
       );
-      if (result0.length === 0)
+      if (result0[0].count === 0)
         return res.status(400).json({
           message: "این درس هنوز تعریف نشده و نمی توان از آن میزبانی گرفت",
         });
@@ -669,7 +657,7 @@ const create_schedule = async (req, res) => {
 
     // check for duplicate schedule in the db
     const [result1, fields1] = await connection.execute(
-      `select * from schedules 
+      `select count(*) as count from schedules 
       where semester_id=${semester_id} and ${
         host_field_of_study_id !== -1
           ? `host_field_of_study_id = ${host_field_of_study_id}`
@@ -677,7 +665,7 @@ const create_schedule = async (req, res) => {
       } 
       and course_id=${course_id} and courseGroup=${courseGroup}`
     );
-    if (result1.length !== 0)
+    if (result1[0].count !== 0)
       return res
         .status(409)
         .json({ message: "این درس قبلا در برنامه اضافه شده است" });
@@ -701,11 +689,11 @@ const create_schedule = async (req, res) => {
     // else, it means that we check conflict before and we just insert it with new host_fos
     if (host_field_of_study_id === -1) {
       // check for interferece week date in the db
-      /*
-        we have two queries;
-        first query checks (class & time & weekKindClass & weekDay) for input_class_1 (and input_class_2 if its not -1) to be in db_class_1;
-        second query checks (class & time & weekKindClass & weekDay) for input_class_1 (and input_class_2 if its not -1) to be in db_class_2.
-    */
+
+      // we have two queries;
+      // first query checks (class & time & weekKindClass & weekDay) for input_class_1 (and input_class_2 if its not -1) to be in db_class_1;
+      // second query checks (class & time & weekKindClass & weekDay) for input_class_1 (and input_class_2 if its not -1) to be in db_class_2.
+
       const [result3, fields3] = await connection.execute(
         `select * from times where id = ${time1_id}`
       );
@@ -807,13 +795,13 @@ const create_schedule = async (req, res) => {
         }) and weekDay2=${weekDay2})`
       }`;
       const [result5, fields5] = await connection.execute(query);
-      if (result5.length !== 0) return res.status(409).json(result5);
+      if (result5.length !== 0) return res.status(200).json(result5);
 
       const [result6, fields6] = await connection.execute(query2);
-      if (result6.length !== 0) return res.status(409).json(result6);
+      if (result6.length !== 0) return res.status(200).json(result6);
     }
 
-    // insertiion
+    // insertion
     const [result7, fields7] = await connection.execute(
       `insert into schedules (testDay, testDayPart, maxCapacity, minCapacity, courseGroup, weekKindClass1, weekKindClass2, 
       weekDay1, weekDay2, field_of_study_id, semester_id, course_id, professor_id, host_field_of_study_id, 
@@ -826,7 +814,7 @@ const create_schedule = async (req, res) => {
         host_field_of_study_id !== -1 ? host_field_of_study_id : null
       }, ${class1_id}, ${class2_id !== -1 ? class2_id : null}, ${
         req.user.id
-      }, ${accessibleFor_user_id}, 
+      }, ${accessibleFor_user_id !== -1 ? accessibleFor_user_id : null}, 
       ${time1_id}, ${class2_id !== -1 ? time2_id : null})`
     );
 
@@ -842,7 +830,7 @@ const create_schedule = async (req, res) => {
 };
 
 const email_weekly_schedule = async (req, res) => {
-  const { professor_id, semester_id } = req.body;
+  const { professor_id, semester_id } = req.body.data;
   if (!professor_id || !semester_id)
     return res.status(400).json({
       message: "اطلاعات ارسالی برای ایمیل برنامه ی هفتگی ناقص است",
@@ -851,7 +839,10 @@ const email_weekly_schedule = async (req, res) => {
   //connect to db
   let connection;
   try {
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection({
+      ...dbConfig,
+      multipleStatements: true,
+    });
   } catch (error) {
     return res
       .status(500)
@@ -866,102 +857,82 @@ const email_weekly_schedule = async (req, res) => {
       return res.status(400).json({ message: "آیدی استاد نامعتبر است" });
 
     const [result0, fields0] = await connection.execute(
-      `select * from schedules where professor_id=${professor_id} and semester_id = ${semester_id}`
+      `select count(*) as count from schedules where professor_id=${professor_id} and semester_id = ${semester_id}`
     );
-    if (result0.length === 0)
+    if (result0[0].count === 0)
       return res
         .status(400)
         .json({ message: "برنامه ای در این نیمسال برای این استاد وجود ندارد" });
 
-    const [result1, fields1] = await connection.execute(
+    const [results, fields] = await connection.query(
       `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
       from schedules join times on schedules.time1_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay1=1 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const [result2, fields2] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
       from schedules join times on schedules.time2_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay2=1 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const saturday = [...result1, ...result2];
-    saturday.sort((a, b) => a.start - b.start);
-
-    const [result3, fields3] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
       from schedules join times on schedules.time1_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay1=2 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const [result4, fields4] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
       from schedules join times on schedules.time2_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay2=2 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const sunday = [...result3, ...result4];
-    sunday.sort((a, b) => a.start - b.start);
-
-    const [result5, fields5] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
       from schedules join times on schedules.time1_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay1=3 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const [result6, fields6] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
       from schedules join times on schedules.time2_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay2=3 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const monday = [...result5, ...result6];
-    monday.sort((a, b) => a.start - b.start);
-
-    const [result7, fields7] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
       from schedules join times on schedules.time1_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay1=4 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const [result8, fields8] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
       from schedules join times on schedules.time2_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay2=4 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const tuesday = [...result7, ...result8];
-    tuesday.sort((a, b) => a.start - b.start);
-
-    const [result9, fields9] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
       from schedules join times on schedules.time1_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay1=5 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const [result10, fields10] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
       from schedules join times on schedules.time2_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay2=5 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const wednesday = [...result9, ...result10];
-    wednesday.sort((a, b) => a.start - b.start);
-
-    const [result11, fields11] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass1 as weekKind 
       from schedules join times on schedules.time1_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay1=6 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
-      and host_field_of_study_id is null`
-    );
-    const [result12, fields12] = await connection.execute(
-      `select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
+      and host_field_of_study_id is null;
+      select courses.name as course_name, times.start, times.end, courses.unit, weekKindClass2 as weekKind 
       from schedules join times on schedules.time2_id=times.id join courses on schedules.course_id=courses.id 
       where weekDay2=6 and schedules.semester_id = ${semester_id} and schedules.professor_id = ${professor_id} 
       and host_field_of_study_id is null`
     );
-    const thursday = [...result11, ...result12];
-    thursday.sort((a, b) => a.start - b.start);
+
+    const saturday = [...results[0], ...results[1]].sort(
+      (a, b) => a.start - b.start
+    );
+    const sunday = [...results[2], ...results[3]].sort(
+      (a, b) => a.start - b.start
+    );
+    const monday = [...results[4], ...results[5]].sort(
+      (a, b) => a.start - b.start
+    );
+    const tuesday = [...results[6], ...results[7]].sort(
+      (a, b) => a.start - b.start
+    );
+    const wednesday = [...results[8], ...results[9]].sort(
+      (a, b) => a.start - b.start
+    );
+    const thursday = [...results[10], ...results[11]].sort(
+      (a, b) => a.start - b.start
+    );
 
     const schedule = {
       saturday,
@@ -1165,7 +1136,7 @@ const email_weekly_schedule = async (req, res) => {
 };
 
 const email_test_schedule = async (req, res) => {
-  const { professor_id, semester_id } = req.body;
+  const { professor_id, semester_id } = req.body.data;
   if (!professor_id || !semester_id)
     return res.status(400).json({
       message: "اطلاعات ارسالی برای ایمیل برنامه ی هفتگی ناقص است",
@@ -1189,9 +1160,9 @@ const email_test_schedule = async (req, res) => {
       return res.status(400).json({ message: "آیدی استاد نامعتبر است" });
 
     const [result0, fields0] = await connection.execute(
-      `select * from schedules where professor_id = ${professor_id} and semester_id = ${semester_id}`
+      `select count(*) as count from schedules where professor_id = ${professor_id} and semester_id = ${semester_id}`
     );
-    if (result0.length === 0)
+    if (result0[0].count === 0)
       return res
         .status(400)
         .json({ message: "آیدی استاد یا نیمسال نامعتبر است" });
@@ -1283,6 +1254,7 @@ const email_test_schedule = async (req, res) => {
 
       let tr = "";
       if (testDayArr.length > 1) {
+        // create rows after first test
         for (let i = 1; i < testDayArr.length; i++) {
           switch (testDayArr[i].testDayPart) {
             case 1:
@@ -1317,6 +1289,8 @@ const email_test_schedule = async (req, res) => {
 
       let result = "";
 
+      // create first test row
+      // if we have more test (created above) we bring it after first row.
       switch (testDayArr[0].testDayPart) {
         case 1:
           result += `
@@ -1327,6 +1301,7 @@ const email_test_schedule = async (req, res) => {
           <td></td>
         </tr>
         ${tr}`;
+          break;
         case 2:
           result += `
         <tr>
@@ -1336,6 +1311,7 @@ const email_test_schedule = async (req, res) => {
           <td></td>
         </tr>
         ${tr}`;
+          break;
         case 3:
           result += `
         <tr>
@@ -1345,6 +1321,7 @@ const email_test_schedule = async (req, res) => {
           <td>${testDayArr[0].course_name}</td>
         </tr>
         ${tr}`;
+          break;
         default:
           break;
       }
@@ -1445,7 +1422,7 @@ const email_test_schedule = async (req, res) => {
 
     res.status(200).json({ message: "برنامه با موفقیت ایمیل شد" });
 
-    res.status(200).json(schedule);
+    //res.status(200).json(schedule);
   } catch (error) {
     return res
       .status(500)
@@ -1456,8 +1433,8 @@ const email_test_schedule = async (req, res) => {
 };
 
 const get_class_schedules = async (req, res) => {
-  const { class_id, semester_id } = req.body;
-  if (!class_id || !semester_id)
+  const class_id = parseInt(req.query.class_id);
+  if (!class_id)
     return res
       .status(400)
       .json({ message: "اطلاعات ارسالی برای دریافت برنامه ی کلاس ناقص است" });
@@ -1465,7 +1442,10 @@ const get_class_schedules = async (req, res) => {
   //connect to db
   let connection;
   try {
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection({
+      ...dbConfig,
+      multipleStatements: true,
+    });
   } catch (error) {
     return res
       .status(500)
@@ -1479,93 +1459,92 @@ const get_class_schedules = async (req, res) => {
     );
 
     if (result13.length === 0)
-      return res
-        .status(400)
-        .json({ message: "کلاسی مطابق با آیدی ارسالی وجود ندارد" });
+      return res.status(400).json({ message: "درخواست نامعتبر" });
 
-    const [result1, fields1] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+    const [result0, fields0] = await connection.execute(
+      `SELECT id FROM semesters ORDER BY ID DESC LIMIT 1`
+    );
+    const semester_id = result0[0].id;
+
+    // here we query multiple statements by spliting each query by semicolon.
+    // as an example, query one, gets schedules with class1 matching which hold in saturday; second query does this for class2s.
+    // and other queries do this for other days.
+    const [results, fields] = await connection.query(
+      `select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=1 and class1_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const [result2, fields2] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=1 and class1_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id   
-      where weekDay2=1 and class2_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const saturday = [...result1, ...result2];
-
-    const [result3, fields3] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay2=1 and class2_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=2 and class1_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const [result4, fields4] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=2 and class1_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id   
-      where weekDay2=2 and class2_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const sunday = [...result3, ...result4];
-
-    const [result5, fields5] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay2=2 and class2_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=3 and class1_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const [result6, fields6] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=3 and class1_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id   
-      where weekDay2=3 and class2_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const monday = [...result5, ...result6];
-
-    const [result7, fields7] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay2=3 and class2_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=4 and class1_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const [result8, fields8] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=4 and class1_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id   
-      where weekDay2=4 and class2_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const tuesday = [...result7, ...result8];
-
-    const [result9, fields9] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay2=4 and class2_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=5 and class1_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const [result10, fields10] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=5 and class1_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id   
-      where weekDay2=5 and class2_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const wednesday = [...result9, ...result10];
-
-    const [result11, fields11] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay2=5 and class2_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass1 as weekKind from schedules join times on schedules.time1_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id 
-      where weekDay1=6 and class1_id=${class_id} and semester_id = ${semester_id}`
-    );
-    const [result12, fields12] = await connection.execute(
-      `select schedules.id as schedule_id, courses.name as course_name, field_of_studies.name as field_of_study_name, times.start, 
+      where weekDay1=6 and class1_id=${class_id} and semester_id = ${semester_id};
+      select schedules.id as schedule_id, courses.name as course_name, courses.unit, field_of_studies.name as field_of_study_name, times.start, 
       times.end, weekKindClass2 as weekKind from schedules join times on schedules.time2_id=times.id 
       join courses on schedules.course_id=courses.id join field_of_studies on schedules.field_of_study_id=field_of_studies.id   
       where weekDay2=6 and class2_id=${class_id} and semester_id = ${semester_id}`
     );
-    const thursday = [...result11, ...result12];
+
+    /*     const saturday = [...results[0], ...results[1]];
+    const sunday = [...results[2], ...results[3]];
+    const monday = [...results[4], ...results[5]];
+    const tuesday = [...results[6], ...results[7]];
+    const wednesday = [...results[8], ...results[9]];
+    const thursday = [...results[10], ...results[11]]; */
+
+    const saturday = [...results[0], ...results[1]].sort(
+      (a, b) => a.start - b.start
+    );
+    const sunday = [...results[2], ...results[3]].sort(
+      (a, b) => a.start - b.start
+    );
+    const monday = [...results[4], ...results[5]].sort(
+      (a, b) => a.start - b.start
+    );
+    const tuesday = [...results[6], ...results[7]].sort(
+      (a, b) => a.start - b.start
+    );
+    const wednesday = [...results[8], ...results[9]].sort(
+      (a, b) => a.start - b.start
+    );
+    const thursday = [...results[10], ...results[11]].sort(
+      (a, b) => a.start - b.start
+    );
 
     const class_schedule = {
       saturday,
@@ -1581,6 +1560,7 @@ const get_class_schedules = async (req, res) => {
     };
     res.status(200).json(result);
   } catch (error) {
+    console.log(error);
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
@@ -1601,16 +1581,14 @@ const update_schedule = async (req, res) => {
     weekKindClass2,
     weekDay1,
     weekDay2,
-    semester_id,
     course_id,
     professor_id,
     host_field_of_study_id,
     class1_id,
     class2_id,
-    accessibleFor_user_id,
     time1_id,
     time2_id,
-  } = req.body;
+  } = req.body.data;
   if (
     !id ||
     !testDay ||
@@ -1622,13 +1600,11 @@ const update_schedule = async (req, res) => {
     !weekKindClass2 ||
     !weekDay1 ||
     !weekDay2 ||
-    !semester_id ||
     !course_id ||
     !professor_id ||
     !host_field_of_study_id ||
     !class1_id ||
     !class2_id ||
-    !accessibleFor_user_id ||
     !time1_id ||
     !time2_id
   )
@@ -1649,19 +1625,25 @@ const update_schedule = async (req, res) => {
   try {
     // check for existing id in the db
     const [result0, fields0] = await connection.execute(
-      `select * from schedules where id=${id}`
+      `select count(*) as count from schedules where id=${id}`
     );
 
-    if (result0.length === 0)
+    if (result0[0].count === 0)
       return res
         .status(400)
         .json({ message: "برنامه ای مطابق با آیدی ارسالی وجود ندارد" });
+
+    // fetch last semester_id
+    const [result00, fields00] = await connection.execute(
+      `SELECT id FROM semesters ORDER BY ID DESC LIMIT 1`
+    );
+    const semester_id = result00[0].id;
 
     // if user wants to use host_fos, check that do we have this input_schedule in the db;
     // if we have, the db_data is the same as input_data but host_fos = null.
     if (host_field_of_study_id !== -1) {
       const [result01, fields01] = await connection.execute(
-        `select * from schedules 
+        `select count(*) as count from schedules 
       where testDay = ${testDay} and testDayPart = ${testDayPart} and maxCapacity = ${maxCapacity} 
       and minCapacity = ${minCapacity} and courseGroup = ${courseGroup} and weekKindClass1 = ${weekKindClass1} 
       and ${
@@ -1675,12 +1657,16 @@ const update_schedule = async (req, res) => {
       and class2_id = ${
         class2_id !== -1 ? `class2_id = ${class2_id}` : "class2_id is null"
       } 
-      and accessibleFor_user_id = ${accessibleFor_user_id} and time1_id = ${time1_id} 
+      and ${
+        accessibleFor_user_id === -1
+          ? "accessibleFor_user_id is null"
+          : `accessibleFor_user_id = ${accessibleFor_user_id}`
+      } and time1_id = ${time1_id} 
       and time2_id = ${
         class2_id !== -1 ? `time2_id = ${time2_id}` : "time2_id is null"
       }`
       );
-      if (result01.length === 0)
+      if (result01[0].count === 0)
         return res.status(400).json({
           message: "این درس هنوز تعریف نشده و نمی توان از آن میزبانی گرفت",
         });
@@ -1776,7 +1762,7 @@ const update_schedule = async (req, res) => {
         join times t1 on schedules.time1_id=t1.id 
         join classes c1 on schedules.class1_id=c1.id 
         join professors on schedules.professor_id = professors.id 
-        where semester_id=${semester_id} and ((class1_id=${class1_id} or professor_id=${professor_id}) and (${time_clause1}) 
+        where semester_id=${semester_id} and schedules.id <> ${id} and ((class1_id=${class1_id} or professor_id=${professor_id}) and (${time_clause1}) 
         and weekKindClass1 in (${
           weekKindClass1 === 2
             ? [1, 2]
@@ -1805,7 +1791,7 @@ const update_schedule = async (req, res) => {
         join times t2 on schedules.time2_id=t2.id 
         join classes c2 on schedules.class2_id=c2.id 
         join professors on schedules.professor_id = professors.id 
-        where semester_id=${semester_id} and ((class2_id=${class1_id} or professor_id=${professor_id}) and (${time_clause11}) 
+        where semester_id=${semester_id} and schedules.id <> ${id} and ((class2_id=${class1_id} or professor_id=${professor_id}) and (${time_clause11}) 
         and weekKindClass2 in (${
           weekKindClass1 === 2
             ? [1, 2]
@@ -1826,10 +1812,10 @@ const update_schedule = async (req, res) => {
         }) and weekDay2=${weekDay2})`
       }`;
       const [result5, fields5] = await connection.execute(query);
-      if (result5.length !== 0) return res.status(409).json(result5);
+      if (result5.length !== 0) return res.status(200).json(result5);
 
       const [result6, fields6] = await connection.execute(query2);
-      if (result6.length !== 0) return res.status(409).json(result6);
+      if (result6.length !== 0) return res.status(200).json(result6);
     }
 
     const [result7, fields7] = await connection.execute(
@@ -1838,20 +1824,19 @@ const update_schedule = async (req, res) => {
       weekKindClass2=${
         class2_id !== -1 ? weekKindClass2 : null
       }, weekDay1=${weekDay1}, weekDay2=${class2_id !== -1 ? weekDay2 : null}, 
-      semester_id=${semester_id}, course_id=${course_id}, professor_id=${professor_id}, 
+      course_id=${course_id}, professor_id=${professor_id}, 
       host_field_of_study_id=${
         host_field_of_study_id !== -1 ? host_field_of_study_id : null
       }, class1_id=${class1_id}, class2_id=${
         class2_id !== -1 ? class2_id : null
       }, 
-      submitter_user_id=${
-        req.user.id
-      }, accessibleFor_user_id=${accessibleFor_user_id}, time1_id=${time1_id}, 
+      submitter_user_id=${req.user.id}, time1_id=${time1_id}, 
       time2_id=${class2_id !== -1 ? time2_id : null} where id = ${id}`
     );
 
     res.status(201).json({ message: `برنامه مورد نظر با موفقیت ویرایش شد` });
   } catch (error) {
+    console.log(error);
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });
@@ -1861,7 +1846,7 @@ const update_schedule = async (req, res) => {
 };
 
 const update_schedule_state = async (req, res) => {
-  const { id } = req.body;
+  const { id } = req.body.data;
   if (!id)
     return res
       .status(400)
@@ -1900,7 +1885,7 @@ const update_schedule_state = async (req, res) => {
 
     res
       .status(201)
-      .json({ message: `وضعیت برنامه ی مورد نظر با موفقیت تغییر پیدا کرد` });
+      .json({ message: `وضعیت درس مورد نظر با موفقیت تغییر پیدا کرد` });
   } catch (error) {
     return res
       .status(500)
@@ -1928,10 +1913,10 @@ const delete_schedule = async (req, res) => {
   try {
     // check for existing id in the db
     const [result1, fields1] = await connection.execute(
-      `select * from schedules where id = ${id}`
+      `select count(*) as count from schedules where id = ${id}`
     );
 
-    if (result1.length === 0)
+    if (result1[0].count === 0)
       return res
         .status(400)
         .json({ message: "برنامه ای مطابق با آیدی ارسالی وجود ندارد" });
