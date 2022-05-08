@@ -39,12 +39,14 @@ const get_others_messages = async (req, res) => {
     );
     results.result = result2;
 
-    const [result3, fields3] = await connection.execute(
-      `update messages set isSeen=true where to_user_id=${id} and from_user_id<>${id} 
-      and (deletedFor_user_id is null or deletedFor_user_id<>${id}) and id in (${result2.map(
-        (res) => res.id
-      )})`
-    );
+    if (result2.length) {
+      const [result3, fields3] = await connection.execute(
+        `update messages set isSeen=true where to_user_id=${id} and from_user_id<>${id} 
+        and (deletedFor_user_id is null or deletedFor_user_id<>${id}) and id in (${result2.map(
+          (res) => res.id
+        )})`
+      );
+    }
 
     res.status(200).json(results);
   } catch (error) {
@@ -202,6 +204,12 @@ const create_message = async (req, res) => {
       const [result1, fields1] = await connection.execute(
         `select id, email from users where role = 2 and id <> ${req.user.id}`
       );
+      if (!result1.length) {
+        return res
+          .status(400)
+          .json({ message: "مدیر گروه تخصصی ای وجود ندارد" });
+      }
+
       let emails = [];
       result1.forEach(async (obj) => {
         emails.push(obj.email);
@@ -242,6 +250,12 @@ const create_message = async (req, res) => {
       const [result3, fields3] = await connection.execute(
         `select id, email from users where role = 3 and id <> ${req.user.id}`
       );
+      if (!result3.length) {
+        return res
+          .status(400)
+          .json({ message: "مدیر گروه عمومی ای وجود ندارد" });
+      }
+
       let emails = [];
       result3.forEach(async (obj) => {
         emails.push(obj.email);

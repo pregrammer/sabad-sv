@@ -2,20 +2,21 @@ const mysql = require("mysql2/promise");
 const dbConfig = require("../config/dbConfig");
 
 const get_all_by_filter = async (req, res) => {
-  const field_of_study_id = req.query.field_of_study_id;
+  const fff = req.query.field_of_study_id;
   const kind = req.query.kind;
   const termNumber = req.query.termNumber;
   const page = parseInt(req.query.page);
   const limit = parseInt(req.query.limit);
   const forSelect = req.query.forSelect;
 
-  if (
-    (!field_of_study_id || !kind || !termNumber || !page || !limit) &&
-    !forSelect
-  )
+  if ((!fff || !kind || !termNumber || !page || !limit) && !forSelect)
     return res
       .status(400)
       .json({ message: "اطلاعات ارسالی برای فیلتر کردن درس ها ناقص است" });
+
+  // when user refresh the page, AuthContext removed and auth.fos_id equal to undefined.
+  const field_of_study_id =
+    fff !== "undefined" ? fff : req.user.field_of_study_id;
 
   //connect to db
   let connection;
@@ -90,7 +91,7 @@ const get_all_by_filter = async (req, res) => {
     results.result = result2;
     res.status(200).json(results);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res
       .status(500)
       .json({ message: "خطا در اجرای دستور در پایگاه داده" });

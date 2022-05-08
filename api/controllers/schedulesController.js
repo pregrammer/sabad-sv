@@ -30,6 +30,10 @@ const get_all = async (req, res) => {
     const [result1, fields1] = await connection.execute(
       `SELECT id FROM semesters ORDER BY ID DESC LIMIT 1`
     );
+    if (!result1.length) {
+      return res.status(400).json({ message: "هنوز هیچ نیمسالی تعریف نشده" });
+    }
+
     const [result2, fields2] = await connection.execute(
       `select count(*) as count from schedules where schedules.semester_id = ${
         result1[0].id
@@ -310,12 +314,13 @@ const get_test_schedules_by_filter = async (req, res) => {
   }
 
   if (where_clause.length === 7) {
-    where_clause += "host_field_of_study_id is null";
+    where_clause += "host_field_of_study_id is null and courseGroup = 1";
   } else {
-    where_clause += " and host_field_of_study_id is null";
+    where_clause += " and host_field_of_study_id is null and courseGroup = 1";
   }
   // host_field_of_study_id is null: maybe we have some db_schedules with same data and different host_fos;
   // we want to fetch just the main one (that has null host_fos).
+  // courseGroup = 1: we just want one schedule from same schedules with different courseGroup.
 
   try {
     const [result0, fields0] = await connection.execute(
@@ -944,8 +949,7 @@ const email_weekly_schedule = async (req, res) => {
     };
     ///////////////////////////////////////////////////////
     function generateWeeklyTds(day) {
-      // if course.start is 7 (start with 7; goes to 20) , create td with data;
-      // if not, until reach the course.start, create empty td; then create td with data.
+      // first we map through the schedules and until reach the course.start, create empty tds; then create td with data.
       // if we are in last element in map, then create empty td to fix the row(keep appearance).
       // at last, if our input(day) is empty (we have no schedules at that day) we just create empty td to fix the row(keep appearance);
       // if not, we put created element from map together in a string and return back.
@@ -953,46 +957,32 @@ const email_weekly_schedule = async (req, res) => {
       let i = 7;
 
       const dayArray = day.map((course, idx, arr) => {
-        if (course.start === i) {
-          i = course.end;
-          return `<td colspan="${course.end - course.start}" ${
-            course.weekKind !== 1 ? 'class="not-stable"' : ""
-          }>${
-            course.course_name +
-            ` (${course.unit})` +
-            (course.weekKind !== 1
-              ? ` (${course.weekKind === 2 ? "زوج" : "فرد"})`
-              : "")
-          }</td>`;
-        } else {
-          let tds = "";
+        let tds = "";
+        while (i < course.start) {
+          tds += "<td></td>";
+          i++;
+        }
 
-          while (i < course.start) {
+        tds += `<td colspan="${course.end - course.start}" ${
+          course.weekKind !== 1 ? 'class="not-stable"' : ""
+        }>${
+          course.course_name +
+          ` (${course.unit})` +
+          (course.weekKind !== 1
+            ? ` (${course.weekKind === 2 ? "زوج" : "فرد"})`
+            : "")
+        }</td>`;
+
+        i = course.end;
+
+        if (idx + 1 === arr.length) {
+          while (i < 21) {
             tds += "<td></td>";
             i++;
           }
-
-          tds += `<td colspan="${course.end - course.start}" ${
-            course.weekKind !== 1 ? 'class="not-stable"' : ""
-          }>${
-            course.course_name +
-            ` (${course.unit})` +
-            (course.weekKind !== 1
-              ? ` (${course.weekKind === 2 ? "زوج" : "فرد"})`
-              : "")
-          }</td>`;
-
-          i = course.end;
-
-          if (idx + 1 === arr.length) {
-            while (i < 21) {
-              tds += "<td></td>";
-              i++;
-            }
-          }
-
-          return tds;
         }
+
+        return tds;
       });
 
       let result = "";

@@ -143,6 +143,12 @@ const delete_fos = async (req, res) => {
 
   if (!id) return res.status(400).json({ message: "آیدی رشته نیاز است" });
 
+  if (id === req.user.id) {
+    return res
+      .status(400)
+      .json({ message: "شما مجاز به حذف رشته ی خودتان نمی باشید" });
+  }
+
   //connect to db
   let connection;
   try {
