@@ -1037,6 +1037,10 @@ const email_weekly_schedule = async (req, res) => {
           .not-stable{
             background-color: rgb(252, 215, 178);
           }
+          p {
+            margin-top: 20px;
+            direction: rtl;
+          }
         </style>
       </head>
       <body>
@@ -1086,40 +1090,40 @@ const email_weekly_schedule = async (req, res) => {
             </tr>
           </tbody>
         </table>
+        <p>(این پیام از طریق سامانه ی سبد ارسال شده است. لطفا آنرا ریپلای نکنید)</p>
       </body>
     </html>
     `;
 
     // email to professor
-    //  const transporter = nodemailer.createTransport({
-    //    host: "mail.travercymedia.com",
-    //    port: 587,
-    //    secure: false,
-    //    auth: {
-    //      user: "test@travercymedia.com",
-    //      pass: "123abc",
-    //    },
-    //    /* tls: { // this is for localhost
-    //      rejectUnauthorized: false,
-    //    }, */
-    //  });
+    const transporter = nodemailer.createTransport({
+      host: "mail.morteza-dev.ir",
+      port: 587,
+      secure: false,
+      auth: {
+        user: "sabad@morteza-dev.ir",
+        pass: "Zxasqw123456",
+      },
+      tls: {
+        // this is for localhost
+        rejectUnauthorized: false,
+      },
+    });
 
-    //  const mailOptions = {
-    //    from: "test@travercymedia.com",
-    //    to: result00[0].email,
-    //    subject: "برنامه ی هفتگی نیمسال جاری دانشگاه صنعتی بیرجند",
-    //    text: `sender: ${req.user.email}`,
-    //    html: html_code,
-    //  };
+    const mailOptions = {
+      from: `"${req.user.firstName} ${req.user.lastName}" <sabad@morteza-dev.ir>`,
+      to: result00[0].email,
+      subject: "برنامه ی هفتگی نیمسال جاری دانشگاه صنعتی بیرجند",
+      html: html_code,
+    };
 
-    //  let info = await transporter.sendMail(mailOptions);
+    let info = await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: "برنامه با موفقیت ایمیل شد" });
   } catch (error) {
-    console.log(error);
     return res
       .status(500)
-      .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+      .json({ message: "خطا! لطفا دقایقی دیگر دوباره امتحان کنید" });
   } finally {
     connection.end();
   }
@@ -1160,7 +1164,8 @@ const email_test_schedule = async (req, res) => {
     const [result1, fields1] = await connection.execute(
       `select courses.name as course_name, testDay, testDayPart 
           from schedules join courses on schedules.course_id=courses.id 
-          where host_field_of_study_id is null and schedules.semester_id = ${semester_id} and professor_id = ${professor_id}`
+          where host_field_of_study_id is null and courseGroup = 1 and 
+          schedules.semester_id = ${semester_id} and professor_id = ${professor_id}`
     );
 
     const schedule = {
@@ -1352,6 +1357,10 @@ const email_test_schedule = async (req, res) => {
           thead tr{
               background-color: rgb(90, 195, 251);
           }
+          p {
+            margin-top: 20px;
+            direction: rtl;
+          }
         </style>
       </head>
       <body>
@@ -1382,33 +1391,34 @@ const email_test_schedule = async (req, res) => {
             ${generateTestTds(schedule.out_of_range, "خارج از بازه")}
           </tbody>
         </table>
+        <p>(این پیام از طریق سامانه ی سبد ارسال شده است. لطفا آنرا ریپلای نکنید)</p>
       </body>
     </html>
     `;
 
     // email to professor
-    //  const transporter = nodemailer.createTransport({
-    //    host: "mail.travercymedia.com",
-    //    port: 587,
-    //    secure: false,
-    //    auth: {
-    //      user: "test@travercymedia.com",
-    //      pass: "123abc",
-    //    },
-    //    /* tls: { // this is for localhost
-    //      rejectUnauthorized: false,
-    //    }, */
-    //  });
+    const transporter = nodemailer.createTransport({
+      host: "mail.morteza-dev.ir",
+      port: 587,
+      secure: false,
+      auth: {
+        user: "sabad@morteza-dev.ir",
+        pass: "Zxasqw123456",
+      },
+      tls: {
+        // this is for localhost
+        rejectUnauthorized: false,
+      },
+    });
 
-    //  const mailOptions = {
-    //    from: "test@travercymedia.com",
-    //    to: result00[0].email,
-    //    subject: "برنامه ی امتحانی نیمسال جاری دانشگاه صنعتی بیرجند",
-    //    text: `sender: ${req.user.email}`,
-    //    html: html_code,
-    //  };
+    const mailOptions = {
+      from: `"${req.user.firstName} ${req.user.lastName}" <sabad@morteza-dev.ir>`,
+      to: result00[0].email,
+      subject: "برنامه ی امتحانی نیمسال جاری دانشگاه صنعتی بیرجند",
+      html: html_code,
+    };
 
-    //  let info = await transporter.sendMail(mailOptions);
+    let info = await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: "برنامه با موفقیت ایمیل شد" });
 
@@ -1416,7 +1426,7 @@ const email_test_schedule = async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+      .json({ message: "خطا! لطفا دقایقی دیگر دوباره امتحان کنید" });
   } finally {
     connection.end();
   }

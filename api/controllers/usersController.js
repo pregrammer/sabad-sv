@@ -239,6 +239,8 @@ const update_user = async (req, res) => {
       where id = ${id}`
     );
 
+    // you can regenerate jwt token here, or reLogin to update the jwt user_information.
+
     res.status(201).json({ message: `مشخصات کاربری با موفقیت ویرایش شد` });
   } catch (error) {
     return res

@@ -1,6 +1,10 @@
 
+http://localhost:3500
+###################
+
 http://localhost:3500/field_of_studies?page=1&limit=10
 ###################
+
 
 POST http://localhost:3500/field_of_studies
 content-type: application/json

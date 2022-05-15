@@ -225,27 +225,30 @@ const create_message = async (req, res) => {
       });
 
       // email to sgms
-      //const transporter = nodemailer.createTransport({
-      //  host: "mail.travercymedia.com",
-      //  port: 587,
-      //  secure: false,
-      //  auth: {
-      //    user: "test@travercymedia.com",
-      //    pass: "123abc",
-      //  },
-      //  /* tls: { // this is for localhost
-      //      rejectUnauthorized: false,
-      //    }, */
-      //});
+      const transporter = nodemailer.createTransport({
+        host: "mail.morteza-dev.ir",
+        port: 587,
+        secure: false,
+        auth: {
+          user: "sabad@morteza-dev.ir",
+          pass: "Zxasqw123456",
+        },
+        tls: {
+          // this is for localhost
+          rejectUnauthorized: false,
+        },
+      });
 
-      //const mailOptions = {
-      //  from: "test@travercymedia.com",
-      //  to: emails.toString(),
-      //  subject: title,
-      //  text: `sender: ${req.user.email}` + body,
-      //};
+      const mailOptions = {
+        from: `"${req.user.firstName} ${req.user.lastName}" <sabad@morteza-dev.ir>`,
+        to: emails.toString(),
+        subject: title,
+        text:
+          body +
+          "\n\n(این پیام از طریق سامانه ی سبد ارسال شده است. لطفا آنرا ریپلای نکنید)",
+      };
 
-      //let info = await transporter.sendMail(mailOptions);
+      let info = await transporter.sendMail(mailOptions);
     } else if (to_user_id === "ggm") {
       const [result3, fields3] = await connection.execute(
         `select id, email from users where role = 3 and id <> ${req.user.id}`
@@ -271,27 +274,30 @@ const create_message = async (req, res) => {
       });
 
       // email to ggms
-      //const transporter = nodemailer.createTransport({
-      //  host: "mail.travercymedia.com",
-      //  port: 587,
-      //  secure: false,
-      //  auth: {
-      //    user: "test@travercymedia.com",
-      //    pass: "123abc",
-      //  },
-      //  /* tls: { // this is for localhost
-      //            rejectUnauthorized: false,
-      //          }, */
-      //});
+      const transporter = nodemailer.createTransport({
+        host: "mail.morteza-dev.ir",
+        port: 587,
+        secure: false,
+        auth: {
+          user: "sabad@morteza-dev.ir",
+          pass: "Zxasqw123456",
+        },
+        tls: {
+          // this is for localhost
+          rejectUnauthorized: false,
+        },
+      });
 
-      //const mailOptions = {
-      //  from: "test@travercymedia.com",
-      //  to: emails.toString(),
-      //  subject: title,
-      //  text: `sender: ${req.user.email}` + body,
-      //};
+      const mailOptions = {
+        from: `"${req.user.firstName} ${req.user.lastName}" <sabad@morteza-dev.ir>`,
+        to: emails.toString(),
+        subject: title,
+        text:
+          body +
+          "\n\n(این پیام از طریق سامانه ی سبد ارسال شده است. لطفا آنرا ریپلای نکنید)",
+      };
 
-      //let info = await transporter.sendMail(mailOptions);
+      let info = await transporter.sendMail(mailOptions);
     } else {
       const [result5, fields5] = await connection.execute(
         `select email from users where id = ${to_user_id}`
@@ -303,28 +309,33 @@ const create_message = async (req, res) => {
         }', '${_date.convert(Date(), "fa", "YYYY/MM/DDTHH:MM:SS.S")}')`
       );
 
-      // email to user
-      //const transporter = nodemailer.createTransport({
-      //  host: "mail.travercymedia.com",
-      //  port: 587,
-      //  secure: false,
-      //  auth: {
-      //    user: "test@travercymedia.com",
-      //    pass: "123abc",
-      //  },
-      //  /* tls: { // this is for localhost
-      //            rejectUnauthorized: false,
-      //          }, */
-      //});
+      if (req.user.id !== to_user_id) {
+        // email to user
+        const transporter = nodemailer.createTransport({
+          host: "mail.morteza-dev.ir",
+          port: 587,
+          secure: false,
+          auth: {
+            user: "sabad@morteza-dev.ir",
+            pass: "Zxasqw123456",
+          },
+          tls: {
+            // this is for localhost
+            rejectUnauthorized: false,
+          },
+        });
 
-      //const mailOptions = {
-      //  from: "test@travercymedia.com",
-      //  to: result5[0].email,
-      //  subject: title,
-      //  text: `sender: ${req.user.email}` + body,
-      //};
+        const mailOptions = {
+          from: `"${req.user.firstName} ${req.user.lastName}" <sabad@morteza-dev.ir>`,
+          to: result5[0].email,
+          subject: title,
+          text:
+            body +
+            "\n\n(این پیام از طریق سامانه ی سبد ارسال شده است. لطفا آنرا ریپلای نکنید)",
+        };
 
-      //let info = await transporter.sendMail(mailOptions);
+        let info = await transporter.sendMail(mailOptions);
+      }
     }
 
     await connection.commit();
@@ -334,7 +345,7 @@ const create_message = async (req, res) => {
     connection.rollback();
     return res
       .status(500)
-      .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+      .json({ message: "خطا! لطفا دقایقی دیگر دوباره امتحان کنید" });
   } finally {
     connection.end();
   }

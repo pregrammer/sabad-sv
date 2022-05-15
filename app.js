@@ -8,7 +8,6 @@ const { requireAuth } = require("./api/middlewares/authMiddlewares");
 const credentials = require("./api/middlewares/credentials");
 
 const corsOptions = require("./api/config/corsOptions");
-const { sendStatus } = require("express/lib/response");
 const PORT = process.env.PORT || 3500;
 
 // log requests info to the console
@@ -41,12 +40,12 @@ app.use("/schedules", require("./api/routes/schedulesRoutes"));
 
 // route not found
 app.all("*", (req, res) => {
-  res.status(404).json({ error: "404 Not Found" });
+  res.status(404).json({ message: "404 Not Found" });
 });
 
 // error handler
 app.use((err, req, res, next) => {
-  res.status(error.status || 500).send(err);
+  res.status(error.status || 500).json({ message: err.message });
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

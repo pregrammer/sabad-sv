@@ -167,41 +167,46 @@ const create_semester = async (req, res) => {
       "select id, email from users where role=2"
     );
 
-    const _date = new Zaravand();
-    let emails = "";
+    if (result4.length) {
+      const _date = new Zaravand();
+      let emails = [];
 
-    result4.forEach(async (el) => {
-      emails += el.email;
-      const [result5, fields5] = await connection.execute(
-        `insert into messages (title, body, to_user_id, from_user_id, created_at) 
-        values ('${title}', '${body}', '${el.id}', '${
-          req.user.id
-        }', '${_date.convert(Date(), "fa", "YYYY/MM/DDTHH:MM:SS.S")}')`
-      );
-    });
+      result4.forEach(async (el) => {
+        emails.push(el.email);
+        const [result5, fields5] = await connection.execute(
+          `insert into messages (title, body, to_user_id, from_user_id, created_at) 
+          values ('${title}', '${body}', '${el.id}', '${
+            req.user.id
+          }', '${_date.convert(Date(), "fa", "YYYY/MM/DDTHH:MM:SS.S")}')`
+        );
+      });
 
-    // email to users
-    //const transporter = nodemailer.createTransport({
-    //  host: "mail.travercymedia.com",
-    //  port: 587,
-    //  secure: false,
-    //  auth: {
-    //    user: "test@travercymedia.com",
-    //    pass: "123abc",
-    //  },
-    //  /* tls: { // this is for localhost
-    //      rejectUnauthorized: false,
-    //    }, */
-    //});
+      // email to ggms
+      const transporter = nodemailer.createTransport({
+        host: "mail.morteza-dev.ir",
+        port: 587,
+        secure: false,
+        auth: {
+          user: "sabad@morteza-dev.ir",
+          pass: "Zxasqw123456",
+        },
+        tls: {
+          // this is for localhost
+          rejectUnauthorized: false,
+        },
+      });
 
-    //const mailOptions = {
-    //  from: "test@travercymedia.com",
-    //  to: emails,
-    //  subject: message_title,
-    //  text: message_body,
-    //};
+      const mailOptions = {
+        from: `"${req.user.firstName} ${req.user.lastName}" <sabad@morteza-dev.ir>`,
+        to: emails.toString(),
+        subject: title,
+        text:
+          body +
+          "\n\n(این پیام از طریق سامانه ی سبد ارسال شده است. لطفا آنرا ریپلای نکنید)",
+      };
 
-    //let info = await transporter.sendMail(mailOptions);
+      let info = await transporter.sendMail(mailOptions);
+    }
 
     await connection.commit();
     res.status(201).json({ message: `نیمسال مورد نظر با موفقیت ثبت شد` });
@@ -209,7 +214,7 @@ const create_semester = async (req, res) => {
     connection.rollback();
     return res
       .status(500)
-      .json({ message: "خطا در اجرای دستور در پایگاه داده" });
+      .json({ message: "خطا! لطفا دقایقی دیگر دوباره امتحان کنید" });
   } finally {
     connection.end();
   }
